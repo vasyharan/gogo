@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  gogo-db:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: 'gogo_db'
+      POSTGRES_USER: 'gogo_service'
+      POSTGRES_PASSWORD: 'gogo1234'
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432'
+    volumes:
+      - gogo-db-volume:/var/lib/postgresql/data
+# Names our volume
+volumes:
+  gogo-db-volume: null
