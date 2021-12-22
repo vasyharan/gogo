@@ -3,12 +3,11 @@ extern crate rocket;
 #[macro_use]
 extern crate diesel;
 
-pub mod error;
+pub mod errors;
 pub mod models;
 pub mod schema;
 
 use crate::diesel::prelude::*;
-use crate::error::ApiError;
 use dotenv::dotenv;
 use rocket::response::Redirect;
 use rocket_sync_db_pools::database;
@@ -19,11 +18,12 @@ use std::path::PathBuf;
 struct GogoDbConn(diesel::PgConnection);
 
 #[get("/<path..>")]
-async fn redirect(conn: GogoDbConn, path: PathBuf) -> Result<Redirect, ApiError> {
+async fn redirect(conn: GogoDbConn, path: PathBuf) -> Result<Redirect, errors::RedirectError> {
     use crate::schema::shortlinks::dsl::*;
 
     let mut path_iter = path.iter();
     match path_iter.next() {
+        None => Err(errors::RedirectError::NotFound),
         Some(path) => {
             let kw = String::from(path.to_str().unwrap_or(""));
             let golink = conn
@@ -35,7 +35,6 @@ async fn redirect(conn: GogoDbConn, path: PathBuf) -> Result<Redirect, ApiError>
                 .await?;
             Ok(Redirect::to(golink.link))
         }
-        None => Err(ApiError::NotFound),
     }
 }
 

@@ -3,26 +3,27 @@ use rocket::response::Responder;
 use rocket::Response;
 use std::io::Cursor;
 
-pub enum ApiError {
+pub enum RedirectError {
     DatabaseError(diesel::result::Error),
     NotFound,
 }
 
-impl From<diesel::result::Error> for ApiError {
+impl From<diesel::result::Error> for RedirectError {
     fn from(e: diesel::result::Error) -> Self {
-        ApiError::DatabaseError(e)
+        RedirectError::DatabaseError(e)
     }
 }
 
-impl<'r> Responder<'r, 'static> for ApiError {
+impl<'r> Responder<'r, 'static> for RedirectError {
     fn respond_to(
         self,
         _: &'r rocket::Request<'_>,
     ) -> std::result::Result<rocket::Response<'static>, rocket::http::Status> {
+        let notFoundRes = (Status::NotFound, String::from("Not found"));
         let (status, body) = match self {
-            Self::NotFound => (Status::NotFound, String::from("Not found")),
+            Self::NotFound => notFoundRes,
             Self::DatabaseError(err) => match err {
-                diesel::result::Error::NotFound => (Status::NotFound, String::from("Not found")),
+                diesel::result::Error::NotFound => notFoundRes,
                 _ => (
                     Status::InternalServerError,
                     format!("Database error: {}", err),
