@@ -13,6 +13,15 @@ services:
       - '5432'
     volumes:
       - gogo-db-volume:/var/lib/postgresql/data
-# Names our volume
+  gogo-api:
+    build: ./api
+    environment:
+      - GOGO_DB_URL=postgres://gogo_service:gogo1234@gogo-db/gogo_db
+    depends_on:
+      - gogo-db
+    ports:
+      - '8000:8000'
+    expose:
+      - '8000'
 volumes:
   gogo-db-volume: null
