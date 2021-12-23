@@ -19,11 +19,46 @@ impl<'r> Responder<'r, 'static> for RedirectError {
         self,
         _: &'r rocket::Request<'_>,
     ) -> std::result::Result<rocket::Response<'static>, rocket::http::Status> {
-        let notFoundRes = (Status::NotFound, String::from("Not found"));
+        let not_found = (Status::NotFound, String::from("Not found"));
         let (status, body) = match self {
-            Self::NotFound => notFoundRes,
+            Self::NotFound => not_found,
             Self::DatabaseError(err) => match err {
-                diesel::result::Error::NotFound => notFoundRes,
+                diesel::result::Error::NotFound => not_found,
+                _ => (
+                    Status::InternalServerError,
+                    format!("Database error: {}", err),
+                ),
+            },
+        };
+        let res = Response::build()
+            .status(status)
+            .header(ContentType::Plain)
+            .sized_body(body.len(), Cursor::new(body))
+            .finalize();
+
+        Ok(res)
+    }
+}
+
+pub enum ApiError {
+    DatabaseError(diesel::result::Error),
+}
+
+impl From<diesel::result::Error> for ApiError {
+    fn from(e: diesel::result::Error) -> Self {
+        ApiError::DatabaseError(e)
+    }
+}
+
+impl<'r> Responder<'r, 'static> for ApiError {
+    fn respond_to(
+        self,
+        _: &'r rocket::Request<'_>,
+    ) -> std::result::Result<rocket::Response<'static>, rocket::http::Status> {
+        let not_found = (Status::NotFound, String::from("Not found"));
+        let (status, body) = match self {
+            Self::DatabaseError(err) => match err {
+                diesel::result::Error::NotFound => not_found,
                 _ => (
                     Status::InternalServerError,
                     format!("Database error: {}", err),
