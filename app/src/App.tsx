@@ -1,3 +1,10 @@
+import { Navbar } from "./components/Navbar";
+
 export function App() {
-    return <h1>Hello world!</h1>;
+  return (
+    <>
+      <Navbar></Navbar>
+      <div className="max-w-2xl mx-auto"></div>
+    </>
+  );
 }
