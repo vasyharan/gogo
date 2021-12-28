@@ -2,16 +2,15 @@
   "name": "gogo-app",
   "version": "1.0.0",
   "scripts": {
-    "build": "parcel build",
+    "build": "parcel build --public-url /go",
     "dev": "parcel serve",
     "lint": "eslint src",
     "format": "prettier --ignore-path .gitignore --write ."
   },
   "targets": {
-    "go": {
+    "default": {
       "source": "src/index.html",
-      "distDir": "dist/go",
-      "publicUrl": "/go"
+      "distDir": "dist/go"
     }
   },
   "dependencies": {
