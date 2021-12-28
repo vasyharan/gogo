@@ -23,5 +23,13 @@ services:
       - '8000:8000'
     expose:
       - '8000'
+  gogo-app:
+    build: ./app
+    depends_on:
+      - gogo-api
+    ports:
+      - '8080:8080'
+    expose:
+      - '8080'
 volumes:
   gogo-db-volume: null

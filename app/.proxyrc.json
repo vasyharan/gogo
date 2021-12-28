@@ -1,0 +1,8 @@
+{
+  "/go/api": {
+    "target": "http://localhost:8000/",
+    "pathRewrite": {
+      "^/go/api": "/go/api"
+    }
+  }
+}

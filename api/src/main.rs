@@ -125,7 +125,7 @@ fn rocket() -> _ {
         .attach(GogoDbConn::fairing())
         .mount("/", routes![redirect])
         .mount(
-            "/go",
+            "/go/api",
             routes![list_links, create_link, get_link, update_link, delete_link],
         )
 }

@@ -1,11 +1,18 @@
 {
   "name": "gogo-app",
   "version": "1.0.0",
-  "source": "src/index.html",
   "scripts": {
+    "build": "parcel build",
     "dev": "parcel serve",
     "lint": "eslint src",
     "format": "prettier --ignore-path .gitignore --write ."
+  },
+  "targets": {
+    "go": {
+      "source": "src/index.html",
+      "distDir": "dist/go",
+      "publicUrl": "/go"
+    }
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.4.0",
