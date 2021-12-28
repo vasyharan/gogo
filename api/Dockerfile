@@ -1,5 +1,7 @@
-FROM rustlang/rust:nightly-slim AS builder
+FROM rust AS builder
 WORKDIR /build
+
+RUN rustup default nightly
 
 COPY Cargo.toml Cargo.lock ./
 RUN --mount=type=cache,target=/build/target/release \
