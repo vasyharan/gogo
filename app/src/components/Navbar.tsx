@@ -33,7 +33,7 @@ export function Navbar() {
         </div>
         <button
           type="button"
-          className="flex-shrink-0 border-0 rounded-sm bg-emerald-700 hover:bg-emerald-800 hover:drop-shadow-lg text-sm text-white py-1 px-2"
+          className="flex-shrink-0 border-0 rounded-sm bg-emerald-700 hover:bg-emerald-800 hover:drop-shadow-lg focus:outline-0 focus:bg-emerald-800 focus:drop-shadow-xl text-sm text-white py-1 px-2"
         >
           New link
         </button>
