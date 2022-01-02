@@ -1,11 +1,19 @@
+import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { Golink } from "./models";
 import { GolinkEntry } from "./components/GolinkEntry";
 
 export function App() {
-  const golinks: Golink[] = [
-    { id: 1, keyword: "google", link: "http://www.google.com/" },
-  ];
+  const [golinks, setGolinks] = useState<Golink[]>([]);
+  useEffect(() => {
+    const fetchGolinks = async () => {
+      const resp = await fetch("/go/api/link");
+      const golinks: Golink[] = await resp.json();
+      setGolinks(golinks);
+    };
+
+    fetchGolinks();
+  }, []);
 
   return (
     <>
