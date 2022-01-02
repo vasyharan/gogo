@@ -1,4 +1,9 @@
-export function Navbar() {
+type NavbarProps = {
+  query: string;
+  onQueryChange: (q: string) => void;
+};
+
+export function Navbar({ query, onQueryChange }: NavbarProps) {
   return (
     <nav className="flex items-center justify-center flex-wrap bg-emerald-500 drop-shadow-lg p-2 mb-6">
       <div className="flex items-center flex-grow max-w-2xl">
@@ -29,6 +34,8 @@ export function Navbar() {
             type="text"
             className="w-full pl-2 pr-0 mr-2 py-1 text-sm border-0 bg-emerald-500 placeholder-emerald-200 focus:placeholder-gray-200 focus:bg-white focus:ring-0"
             placeholder="Search..."
+            value={query}
+            onChange={(ev) => onQueryChange(ev.target.value)}
           />
         </div>
         <button

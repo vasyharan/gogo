@@ -1,23 +1,36 @@
+import { debounce } from "lodash";
 import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { Golink } from "./models";
 import { GolinkEntry } from "./components/GolinkEntry";
 
-export function App() {
-  const [golinks, setGolinks] = useState<Golink[]>([]);
-  useEffect(() => {
-    const fetchGolinks = async () => {
-      const resp = await fetch("/go/api/link");
-      const golinks: Golink[] = await resp.json();
-      setGolinks(golinks);
-    };
+async function fetchGolinks(q: string): Promise<Golink[]> {
+  const params = new URLSearchParams({ q });
+  const resp = await fetch(`/go/api/link?${params.toString()}`);
+  const golinks: Golink[] = await resp.json();
+  return golinks;
+}
 
-    fetchGolinks();
-  }, []);
+async function _updateGolinks(
+  q: string,
+  setGolinks: (golinks: Golink[]) => void
+) {
+  const golinks = await fetchGolinks(q);
+  setGolinks(golinks);
+}
+const updateGolinks = debounce(_updateGolinks, 300);
+
+export function App() {
+  const [query, setQuery] = useState("");
+  const [golinks, setGolinks] = useState<Golink[]>([]);
+
+  useEffect(() => {
+    updateGolinks(query, setGolinks);
+  }, [query]);
 
   return (
     <>
-      <Navbar></Navbar>
+      <Navbar query={query} onQueryChange={setQuery}></Navbar>
       <div className="max-w-2xl mx-auto">
         {golinks.map((link) => (
           <GolinkEntry key={link.id} golink={link} />
