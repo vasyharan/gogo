@@ -1,6 +1,6 @@
 export function Navbar() {
   return (
-    <nav className="flex items-center justify-center flex-wrap bg-emerald-500 drop-shadow-lg p-2">
+    <nav className="flex items-center justify-center flex-wrap bg-emerald-500 drop-shadow-lg p-2 mb-6">
       <div className="flex items-center flex-grow max-w-2xl">
         <div className="flex items-center flex-shrink-0 text-white mr-6">
           <span className="font-mono tracking-tight">
