@@ -53,6 +53,7 @@ async fn list_links(
             shortlinks
                 .filter(keyword.like(filter_kw))
                 .filter(id.gt(after.unwrap_or(0)))
+                .order(id.asc())
                 .limit(std::cmp::max(50, first.unwrap_or(50)))
                 .load::<Golink>(c)
         })
