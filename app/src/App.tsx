@@ -29,13 +29,11 @@ export function App() {
   }, [query]);
 
   return (
-    <>
+    <div className="max-w-2xl mx-auto">
       <Navbar query={query} onQueryChange={setQuery}></Navbar>
-      <div className="max-w-2xl mx-auto">
-        {golinks.map((link) => (
-          <GolinkEntry key={link.id} golink={link} />
-        ))}
-      </div>
-    </>
+      {golinks.map((link) => (
+        <GolinkEntry key={link.id} golink={link} />
+      ))}
+    </div>
   );
 }
