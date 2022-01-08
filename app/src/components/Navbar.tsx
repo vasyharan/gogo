@@ -1,9 +1,10 @@
 type NavbarProps = {
   query: string;
   onQueryChange: (q: string) => void;
+  onNewLink: () => void;
 };
 
-export function Navbar({ query, onQueryChange }: NavbarProps) {
+export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
   return (
     <nav className="flex items-center p-2 mb-6">
       <div className="mr-4 h-8">
@@ -32,7 +33,7 @@ export function Navbar({ query, onQueryChange }: NavbarProps) {
           </div>
           <input
             type="text"
-            className="w-full py-0 pl-2 pr-0 mr-2 text-sm border-0 placeholder-gray-500 focus:placeholder-gray-300 focus:ring-0"
+            className="w-full p-0 mx-2 text-sm border-0 border-b border-transparent placeholder-gray-500 focus:placeholder-gray-300 focus:ring-0 focus:border-gray-500"
             placeholder="Search..."
             value={query}
             onChange={(ev) => onQueryChange(ev.target.value)}
@@ -40,7 +41,12 @@ export function Navbar({ query, onQueryChange }: NavbarProps) {
         </div>
         <button
           type="button"
-          className="flex-shrink-0 border-0 rounded-sm bg-gray-500 hover:bg-gray-700 hover:drop-shadow-lg focus:outline-0 focus:bg-gray-700 focus:drop-shadow-xl text-sm text-white py-1 px-2"
+          className="flex-shrink-0 border-0 rounded 
+          text-sm text-white font-medium py-1 px-2
+          bg-gray-700 
+          hover:bg-gray-900 hover:drop-shadow-xl 
+          focus-visible:bg-gray-900 focus:drop-shadow-xl focus:outline-0"
+          onClick={() => onNewLink()}
         >
           New link
         </button>
