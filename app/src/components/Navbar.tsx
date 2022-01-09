@@ -1,3 +1,6 @@
+import { Button } from "./Button";
+import { SearchIcon } from "./Icons";
+
 type NavbarProps = {
   query: string;
   onQueryChange: (q: string) => void;
@@ -16,20 +19,7 @@ export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
       <div className="flex grow">
         <div className="mx-2 flex grow items-center text-gray-500 focus-within:text-gray-700">
           <div className="">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <SearchIcon className="w-4 h-4" />
           </div>
           <input
             type="text"
@@ -39,17 +29,17 @@ export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
             onChange={(ev) => onQueryChange(ev.target.value)}
           />
         </div>
-        <button
+        <Button
           type="button"
-          className="flex-shrink-0 border-0 rounded 
-          text-sm text-white font-medium py-1 px-2
+          className="text-sm text-white font-semibold
           bg-gray-700 
-          hover:bg-gray-900 hover:drop-shadow-xl 
-          focus-visible:bg-gray-900 focus:drop-shadow-xl focus:outline-0"
+          outline-gray-900
+          hover:bg-gray-900 
+          focus-visible:bg-gray-900"
           onClick={() => onNewLink()}
         >
-          New link
-        </button>
+          <span>New link</span>
+        </Button>
       </div>
     </nav>
   );

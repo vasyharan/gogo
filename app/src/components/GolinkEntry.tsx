@@ -1,48 +1,14 @@
 import cx from "classnames";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ApiResponse } from "../api";
 import { assertNever } from "../assert";
 import { Golink, NewGolink } from "../models";
-
-function EditIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-    >
-      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-    </svg>
-  );
-}
-
-type State =
-  | { mode: "view" }
-  | { mode: "editing" }
-  | {
-      mode: "edit";
-      keywordError?: string;
-      linkError?: string;
-    };
-
-type GolinkEntryProps = {
-  golink: NewGolink | Golink;
-  save: (golink: NewGolink | Golink) => Promise<ApiResponse<Golink>>;
-  onCancel?: () => void;
-};
-
-function isValidURL(s: string): boolean {
-  try {
-    const url = new URL(s);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-type HTMLProps<T> = React.DetailedHTMLProps<React.InputHTMLAttributes<T>, T>;
-type EditableProps = HTMLProps<HTMLInputElement> & {
+import { Button } from "./Button";
+import { CancelIcon, EditIcon, SaveIcon } from "./Icons";
+type EditableProps = React.DetailedHTMLProps<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+> & {
   mode: "view" | "edit";
   error: string;
 };
@@ -85,6 +51,30 @@ function Editable(props: EditableProps) {
       );
     default:
       assertNever(mode);
+  }
+}
+
+type State =
+  | { mode: "view" }
+  | { mode: "editing" }
+  | {
+      mode: "edit";
+      keywordError?: string;
+      linkError?: string;
+    };
+
+type GolinkEntryProps = {
+  golink: NewGolink | Golink;
+  save: (golink: NewGolink | Golink) => Promise<ApiResponse<Golink>>;
+  onCancel?: () => void;
+};
+
+function isValidURL(s: string): boolean {
+  try {
+    const url = new URL(s);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
   }
 }
 
@@ -133,7 +123,10 @@ export function GolinkEntry(props: GolinkEntryProps) {
     if (!!props.onCancel) props.onCancel();
   }
 
-  const viewMode = state.mode === "view";
+  const { mode } = state;
+  const viewMode = mode === "view";
+  const changed = !(keyword === golink.keyword && link === golink.link);
+
   let { keywordError = "", linkError = "" } = state as any;
   if (state.mode === "edit") {
     if (!keywordError) {
@@ -147,7 +140,6 @@ export function GolinkEntry(props: GolinkEntryProps) {
       }
     }
   }
-  const valid = keywordError === "" && linkError === "";
 
   return (
     <form
@@ -206,12 +198,9 @@ export function GolinkEntry(props: GolinkEntryProps) {
             block: viewMode,
           })}
         >
-          <button
-            tabIndex={0}
-            className="inline-flex items-center text-sm focus:outline-0 text-gray-700 hover:text-gray-900"
-          >
-            <EditIcon />
-          </button>
+          <Button className="shadow-none hover:shadow-none">
+            <EditIcon className="w-4 h-4" />
+          </Button>
         </div>
       </div>
       <div
@@ -220,37 +209,33 @@ export function GolinkEntry(props: GolinkEntryProps) {
           flex: !viewMode,
         })}
       >
-        {/* {state.mode === "error" && (
-          <p className="mx-2 mb-2 text-xs text-red-500">{error}</p>
-        )} */}
         <div className="flex justify-end">
-          <button
-            type="button"
+          <Button
             onClick={handleCancel}
-            disabled={state.mode === "editing"}
-            className="flex-shrink-0 border-0 rounded 
-          text-xs text-white mr-2 py-1 px-2
-          disabled:opacity-30
-          bg-gray-500 
-          hover:bg-gray-600 hover:drop-shadow-xl 
-          disabled:hover:bg-gray-500 disabled:hover:drop-shadow-none
-          focus-visible:bg-gray-600 focus:drop-shadow-xl focus:outline-0"
+            disabled={mode === "editing"}
+            className={cx(
+              "bg-gray-500",
+              "text-xs text-white",
+              "outline-gray-600",
+              "hover:bg-gray-600 disabled:hover:bg-gray-500 focus-visible:bg-gray-600 "
+            )}
           >
-            Cancel
-          </button>
-          <button
+            <CancelIcon className="mr-1 h-4 w-4" />
+            <span>Cancel</span>
+          </Button>
+          <Button
             type="submit"
-            disabled={state.mode === "editing" || !valid}
-            className="flex-shrink-0 border-0 rounded 
-          text-xs text-white font-medium mr-2 py-1 px-2
-          disabled:opacity-30
-          bg-emerald-500 
-          hover:bg-emerald-600 hover:drop-shadow-xl 
-          disabled:hover:bg-emerald-500 disabled:hover:drop-shadow-none
-          focus-visible:bg-emerald-600 focus:drop-shadow-xl focus:outline-0"
+            disabled={mode === "editing" || !changed}
+            className={cx(
+              "bg-emerald-500",
+              "text-xs text-white font-semibold",
+              "outline-emerald-600",
+              "hover:bg-emerald-600 disabled:hover:bg-emerald-500 focus-visible:bg-emerald-600 "
+            )}
           >
-            {isNew ? "Create" : "Update"}
-          </button>
+            <SaveIcon className="mr-1 h-4 w-4" />
+            <span>{isNew ? "Create" : "Update"}</span>
+          </Button>
         </div>
       </div>
     </form>
