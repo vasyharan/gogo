@@ -45,13 +45,14 @@ async fn list_links(
     first: Option<i64>,
     after: Option<i32>,
 ) -> Result<Json<Vec<Golink>>, ApiError> {
-    use crate::schema::shortlinks::dsl::{id, keyword, shortlinks};
+    use crate::schema::shortlinks::dsl::{id, keyword, link, shortlinks};
 
     let filter_kw = format!("{}%", String::from(q.unwrap_or("")));
+    let filter_link = format!("%{}%", String::from(q.unwrap_or("")));
     let golinks = conn
         .run(move |c| {
             shortlinks
-                .filter(keyword.like(filter_kw))
+                .filter(keyword.like(filter_kw).or(link.like(filter_link)))
                 .filter(id.gt(after.unwrap_or(0)))
                 .order(id.asc())
                 .limit(std::cmp::max(50, first.unwrap_or(50)))
