@@ -1,15 +1,15 @@
 import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import * as api from "./api";
+import { assertNever } from "./assert";
 import { GolinkEntry } from "./components/GolinkEntry";
 import { Navbar } from "./components/Navbar";
 import { Golink } from "./models";
-import { assertNever } from "./utils";
 
 async function _loadLinks(q: string, setGolinks: (golinks: Golink[]) => void) {
   const resp = await api.listLinks(q);
   if (resp.type === "success") {
-    const links = resp.body;
+    const links = resp.value;
     setGolinks(links);
   } else if (resp.type === "error") {
     // TODO: handle error
@@ -32,29 +32,23 @@ export function App() {
   async function updateLink(link) {
     const resp = await api.updateLink(link);
     if (resp.type === "success") {
-      const updated = resp.body;
+      const updated = resp.value;
       const updatedLinks = golinks.map((link) =>
         link.id === updated.id ? updated : link
       );
       setGolinks(updatedLinks);
-    } else if (resp.type === "error") {
-      throw new Error(`Error updating link: ${resp.message}`);
-    } else {
-      assertNever(resp);
     }
+    return resp;
   }
 
   async function createLink(link) {
     const resp = await api.createLink(link);
     if (resp.type === "success") {
-      const created = resp.body;
+      const created = resp.value;
       setNewLinkVisible(false);
       setGolinks([...golinks, created]);
-    } else if (resp.type === "error") {
-      throw new Error(`Error creating link: ${resp.message}`);
-    } else {
-      assertNever(resp);
     }
+    return resp;
   }
 
   return (
@@ -67,12 +61,12 @@ export function App() {
       {newLinkVisible && (
         <GolinkEntry
           golink={{ keyword: "", link: "" }}
-          onChange={createLink}
+          save={createLink}
           onCancel={() => setNewLinkVisible(false)}
         />
       )}
       {golinks.map((link) => (
-        <GolinkEntry key={link.id} golink={link} onChange={updateLink} />
+        <GolinkEntry key={link.id} golink={link} save={updateLink} />
       ))}
     </div>
   );

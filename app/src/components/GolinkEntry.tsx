@@ -1,5 +1,7 @@
 import cx from "classnames";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ApiResponse } from "../api";
+import { assertNever } from "../assert";
 import { Golink, NewGolink } from "../models";
 
 function EditIcon() {
@@ -15,10 +17,18 @@ function EditIcon() {
   );
 }
 
-type Mode = "view" | "edit" | "locked" | "error";
+type State =
+  | { mode: "view" }
+  | { mode: "editing" }
+  | {
+      mode: "edit";
+      keywordError?: string;
+      linkError?: string;
+    };
+
 type GolinkEntryProps = {
   golink: NewGolink | Golink;
-  onChange: (golink: NewGolink | Golink) => Promise<void>;
+  save: (golink: NewGolink | Golink) => Promise<ApiResponse<Golink>>;
   onCancel?: () => void;
 };
 
@@ -30,45 +40,67 @@ function isValidURL(s: string): boolean {
     return false;
   }
 }
+
 export function GolinkEntry(props: GolinkEntryProps) {
   const { golink } = props;
   const isNew = !("id" in golink);
 
-  const [mode, setMode] = useState<Mode>(isNew ? "edit" : "view");
+  const [state, setState] = useState<State>(
+    isNew ? { mode: "edit" } : { mode: "view" }
+  );
   const [keyword, setKeyword] = useState(golink.keyword);
   const [link, setLink] = useState(golink.link);
-  const [error, setError] = useState("");
-
-  const viewMode = mode === "view";
-  const invalid = keyword === "" || !isValidURL(link);
 
   async function handleSubmit(ev) {
-    try {
-      ev.preventDefault();
-      setMode("locked");
-      await props.onChange({ ...golink, keyword, link });
-      setMode("view");
-    } catch (err) {
-      setMode("error");
-      setError(err.message);
-      console.error(err);
-    }
+    console.log("handleSubmit");
+    ev.preventDefault();
+    setState({ mode: "editing" });
+    const resp = await props.save({ ...golink, keyword, link });
+    if (resp.type === "success") {
+      setState({ mode: "view" });
+    } else if (resp.type === "error") {
+      let keywordError = "";
+      if (resp.error.code === 101) {
+        keywordError = "A link with the same keyword already exists!";
+      }
+      setState({ mode: "edit", keywordError });
+      console.error(resp.error);
+    } else assertNever(resp);
   }
 
   function handleEdit(ev) {
+    console.log("handleEdit");
     ev.stopPropagation();
-    if (viewMode) {
-      setMode("edit");
+    if (state.mode === "view") {
+      ev.preventDefault();
+      setState({ mode: "edit" });
     }
   }
 
   function handleCancel(ev) {
+    console.log("handleCancel");
     ev.stopPropagation();
-    setMode("view");
     setKeyword(golink.keyword);
     setLink(golink.link);
-    props.onCancel && props.onCancel();
+    setState({ mode: "view" });
+    if (!!props.onCancel) props.onCancel();
   }
+
+  const viewMode = state.mode === "view";
+  let { keywordError = "", linkError = "" } = state as any;
+  if (state.mode === "edit") {
+    if (!keywordError) {
+      if (keyword === "") {
+        keywordError = "A keyword is required";
+      }
+    }
+    if (!linkError) {
+      if (!isValidURL(link)) {
+        linkError = "A link is must be valid HTTP/HTTPS URL";
+      }
+    }
+  }
+  const valid = keywordError === "" && linkError === "";
 
   return (
     <form
@@ -94,45 +126,82 @@ export function GolinkEntry(props: GolinkEntryProps) {
         </div>
         <div className="flex flex-col grow ml-1 mr-0">
           {(viewMode && <span className="text-gray-700">{keyword}</span>) || (
-            <input
-              className="p-0 
-              placeholder-gray-300
-              bg-transparent 
-              text-gray-700
-              border-0 border-b border-transparent 
-              selection:bg-gray-300
-              focus:ring-0 focus:border-b focus:border-gray-300"
-              type="text"
-              name="keyword"
-              value={keyword}
-              placeholder="keyword"
-              autoComplete="off"
-              spellCheck={false}
-              autoFocus={true}
-              required={true}
-              onChange={(ev) => setKeyword(ev.target.value)}
-            />
+            <div className="flex flex-col">
+              <input
+                className={cx(
+                  "p-0",
+                  "bg-transparent",
+                  "text-gray-700",
+                  "border-0 border-b",
+                  "selection:bg-gray-300",
+                  "focus:ring-0",
+                  {
+                    "border-red-400 focus:border-red-200": keywordError !== "",
+                    "placeholder-gray-300": keywordError === "",
+                    "placeholder-red-300": keywordError !== "",
+                    "border-transparent focus:border-gray-300":
+                      keywordError === "",
+                  }
+                )}
+                type="text"
+                name="keyword"
+                value={keyword}
+                placeholder="keyword"
+                autoComplete="off"
+                spellCheck={false}
+                autoFocus={true}
+                required={true}
+                onChange={(ev) => setKeyword(ev.target.value)}
+              />
+              <p
+                className={cx("text-xs", "text-red-500 mb-2", {
+                  hidden: keywordError === "",
+                  block: keywordError !== "",
+                })}
+              >
+                {keywordError}
+              </p>
+            </div>
           )}
           {(viewMode && (
             <span className="text-sm text-gray-500">{link}</span>
           )) || (
-            <input
-              className="p-0 
-              text-sm text-gray-500 
-              placeholder-gray-300
-              selection:bg-gray-300
-              bg-transparent 
-              border-0 border-b border-transparent 
-              focus:ring-0 focus:border-b focus:border-gray-300"
-              type="url"
-              name="link"
-              value={link}
-              placeholder="destination link"
-              autoComplete="off"
-              spellCheck={false}
-              required={true}
-              onChange={(ev) => setLink(ev.target.value)}
-            />
+            <div className="flex flex-col">
+              <input
+                className={cx(
+                  "p-0",
+                  "text-sm text-gray-500",
+                  "bg-transparent",
+                  "text-gray-700",
+                  "border-0 border-b",
+                  "selection:bg-gray-300",
+                  "focus:ring-0",
+                  {
+                    "border-red-400 focus:border-red-200": linkError !== "",
+                    "placeholder-gray-300": linkError === "",
+                    "placeholder-red-300": linkError !== "",
+                    "border-transparent focus:border-gray-300":
+                      linkError === "",
+                  }
+                )}
+                type="url"
+                name="link"
+                value={link}
+                placeholder="destination link"
+                autoComplete="off"
+                spellCheck={false}
+                required={true}
+                onChange={(ev) => setLink(ev.target.value)}
+              />
+              <p
+                className={cx("text-xs", "text-red-500 mb-2", {
+                  hidden: linkError === "",
+                  block: linkError !== "",
+                })}
+              >
+                {linkError}
+              </p>
+            </div>
           )}
         </div>
         <div
@@ -155,14 +224,14 @@ export function GolinkEntry(props: GolinkEntryProps) {
           flex: !viewMode,
         })}
       >
-        {mode === "error" && (
+        {/* {state.mode === "error" && (
           <p className="mx-2 mb-2 text-xs text-red-500">{error}</p>
-        )}
+        )} */}
         <div className="flex justify-end">
           <button
             type="button"
             onClick={handleCancel}
-            disabled={mode === "locked"}
+            disabled={state.mode === "editing"}
             className="flex-shrink-0 border-0 rounded 
           text-xs text-white mr-2 py-1 px-2
           disabled:opacity-30
@@ -175,7 +244,7 @@ export function GolinkEntry(props: GolinkEntryProps) {
           </button>
           <button
             type="submit"
-            disabled={mode === "locked" || invalid}
+            disabled={state.mode === "editing" || !valid}
             className="flex-shrink-0 border-0 rounded 
           text-xs text-white font-medium mr-2 py-1 px-2
           disabled:opacity-30

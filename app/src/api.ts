@@ -1,3 +1,4 @@
+import { assert } from "./assert";
 import { Golink, NewGolink } from "./models";
 
 const DEFAULT_HEADERS = {
@@ -5,18 +6,18 @@ const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
 };
 
-type ApiResponse<T> =
-  | { type: "error"; status: number; message: string }
-  | { type: "success"; body: T };
+export type ApiResponse<T> =
+  | { type: "error"; error: { status: number; code: number; message: string } }
+  | { type: "success"; value: T };
 
 async function toApiResponse<T>(resp: Response): Promise<ApiResponse<T>> {
   if (resp.ok) {
-    const body = await resp.json();
-    return { type: "success", body };
+    const value = await resp.json();
+    return { type: "success", value };
   } else {
-    const { status } = resp;
-    const message = await resp.text();
-    return { type: "error", status, message };
+    const { status, code, message } = await resp.json();
+    assert(status === resp.status, "expected http status to match resp.status");
+    return { type: "error", error: { status, code, message } };
   }
 }
 
