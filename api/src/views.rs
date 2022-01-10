@@ -1,5 +1,5 @@
 table! {
-    shortlinks (id, version) {
+    active_shortlinks (id) {
         id -> Int4,
         version -> Int4,
         keyword -> Varchar,
