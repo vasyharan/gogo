@@ -12,7 +12,7 @@ use crate::diesel::prelude::*;
 use crate::errors::*;
 use crate::models::*;
 use dotenv::dotenv;
-use rocket::response::status::Created;
+use rocket::response::status::{Created, NoContent};
 use rocket::response::Redirect;
 use rocket::serde::json::Json;
 use rocket_sync_db_pools::database;
@@ -46,13 +46,13 @@ async fn list_links(
     first: Option<i64>,
     after: Option<i32>,
 ) -> Result<Json<Vec<Golink>>, ApiError> {
-    use crate::views::active_shortlinks::dsl::{active_shortlinks, id, keyword, link};
+    use crate::schema::shortlinks::dsl::*;
 
     let filter_kw = format!("{}%", String::from(q.unwrap_or("")));
     let filter_link = format!("%{}%", String::from(q.unwrap_or("")));
     let golinks = conn
         .run(move |c| {
-            active_shortlinks
+            shortlinks
                 .filter(keyword.like(filter_kw).or(link.like(filter_link)))
                 .filter(id.gt(after.unwrap_or(0)))
                 .order(id.asc())
@@ -65,9 +65,10 @@ async fn list_links(
 
 #[get("/link/<id>")]
 async fn get_link(conn: GogoDbConn, id: i32) -> Result<Json<Golink>, ApiError> {
-    use crate::views::active_shortlinks::dsl::active_shortlinks;
+    use crate::schema::shortlinks::dsl::shortlinks;
+
     let golink: Golink = conn
-        .run(move |c| active_shortlinks.find(id).first::<Golink>(c))
+        .run(move |c| shortlinks.find(id).first::<Golink>(c))
         .await?;
     Ok(Json(golink))
 }
@@ -77,11 +78,15 @@ async fn create_link(
     conn: GogoDbConn,
     golink: Json<NewGolink>,
 ) -> Result<Created<Json<Golink>>, ApiError> {
-    use crate::schema::shortlinks::dsl::shortlinks;
-    let created_golink: Golink = conn
+    use crate::schema::shortlinks;
+    let created_golink = conn
         .run(move |c| {
-            diesel::insert_into(shortlinks)
-                .values(&*golink)
+            diesel::insert_into(shortlinks::table)
+                .values((
+                    shortlinks::keyword.eq(&golink.keyword),
+                    shortlinks::link.eq(&golink.link),
+                    shortlinks::updated_at.eq(diesel::dsl::now),
+                ))
                 .get_result(c)
         })
         .await?;
@@ -92,51 +97,40 @@ async fn create_link(
 async fn update_link(
     conn: GogoDbConn,
     id: i32,
-    mut golink: Json<Golink>,
+    golink: Json<Golink>,
 ) -> Result<Json<Golink>, ApiError> {
-    use crate::schema::shortlinks::dsl::shortlinks;
-    let version: i32 = golink.version;
-    golink.id = id;
-    golink.version = version + 1;
+    use crate::schema::shortlinks;
+
     let updated_golink: Golink = conn
         .run(move |c| {
-            diesel::insert_into(shortlinks)
-                .values(&*golink)
+            diesel::update(shortlinks::table.find(id))
+                .set((
+                    shortlinks::revision.eq(shortlinks::revision + 1),
+                    shortlinks::keyword.eq(&golink.keyword),
+                    shortlinks::link.eq(&golink.link),
+                    shortlinks::active.eq(golink.active),
+                ))
                 .get_result(c)
         })
         .await?;
     Ok(Json(updated_golink))
 }
 
-#[delete("/link/<id>/<version>")]
-async fn delete_link(conn: GogoDbConn, id: i32, version: i32) -> Result<Json<Golink>, ApiError> {
+#[delete("/link/<id>/<revision>")]
+async fn delete_link(conn: GogoDbConn, id: i32, revision: i32) -> Result<NoContent, ApiError> {
     use crate::schema::shortlinks;
-    use diesel::sql_types::{Bool, Integer};
 
-    let updated_golink: Golink = conn
+    let _num_deleted = conn
         .run(move |c| {
-            shortlinks::table
-                .select((
-                    id.into_sql::<Integer>(),
-                    (version + 1).into_sql::<Integer>(),
-                    shortlinks::keyword,
-                    shortlinks::link,
-                    (true).into_sql::<Bool>(),
-                ))
-                .filter(shortlinks::id.eq(id).and(shortlinks::version.eq(version)))
-                .insert_into(shortlinks::table)
-                .into_columns((
-                    shortlinks::id,
-                    shortlinks::version,
-                    shortlinks::keyword,
-                    shortlinks::link,
-                    shortlinks::archived,
-                ))
-                .get_result(c)
+            diesel::delete(
+                shortlinks::table
+                    .filter(shortlinks::id.eq(id).and(shortlinks::revision.eq(revision))),
+            )
+            .execute(c)
         })
         .await?;
 
-    Ok(Json(updated_golink))
+    Ok(NoContent)
 }
 
 #[launch]

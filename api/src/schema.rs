@@ -1,9 +1,10 @@
 table! {
-    shortlinks (id, version) {
+    shortlinks (id) {
         id -> Int4,
-        version -> Int4,
+        revision -> Int4,
         keyword -> Varchar,
         link -> Varchar,
-        archived -> Bool,
+        active -> Bool,
+        updated_at -> Timestamptz,
     }
 }

@@ -1,14 +1,18 @@
 use crate::schema::shortlinks;
+use chrono::{DateTime, Utc};
 use rocket::serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Insertable, Queryable, AsChangeset, Debug)]
+#[derive(
+    Debug, Clone, Deserialize, Serialize, Identifiable, Queryable, Insertable, AsChangeset,
+)]
 #[table_name = "shortlinks"]
 pub struct Golink {
     pub id: i32,
-    pub version: i32,
+    pub revision: i32,
     pub keyword: String,
     pub link: String,
-    pub archived: bool,
+    pub active: bool,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Deserialize, Insertable, Debug)]
