@@ -10,44 +10,57 @@ type EditableProps = React.DetailedHTMLProps<
   HTMLInputElement
 > & {
   mode: "view" | "edit";
-  error: string;
+  error?: string;
+  hint?: string;
 };
 function Editable(props: EditableProps) {
-  const { mode, className, value, error, ...rest } = props;
+  const { mode, className, value, error, hint, ...rest } = props;
   const isError = error !== "";
   switch (mode) {
     case "view":
       return <span className={className}>{value}</span>;
     case "edit":
       return (
-        <div className="flex flex-col">
+        <>
           <input
             className={cx(
               className,
-              "p-0",
-              "bg-transparent",
-              "border-0 border-b",
-              "selection:bg-gray-300",
-              "focus:ring-0",
-              {
-                "placeholder-red-300 border-red-400 focus:border-red-200":
-                  isError,
-                "placeholder-gray-300 border-transparent focus:border-gray-300":
-                  !isError,
-              },
+              "appearance-none",
+              "rounded-sm",
+              "w-full",
+              "py-1 px-2",
+              "leading-tight",
+              "shadow",
+              "border",
+              "transform-gpu transition-all duration-1500",
+              "border-gray-500",
+              "focus:ring-gray-400",
+              "focus:border-gray-400",
+              "focus:ring-1",
+              "selection:bg-gray-400/20",
             )}
             value={value}
             {...rest}
           />
-          <p
-            className={cx("text-xs", "text-red-500 mb-1", {
-              hidden: !isError,
-              block: isError,
-            })}
-          >
-            {error}
-          </p>
-        </div>
+          <div className="mt-1">
+            <p
+              className={cx("text-xs italic", "text-gray-700", {
+                hidden: !hint || isError,
+                block: hint,
+              })}
+            >
+              {hint}
+            </p>
+            <p
+              className={cx("text-xs italic", "text-rose-600", {
+                hidden: !isError,
+                block: isError,
+              })}
+            >
+              {error}
+            </p>
+          </div>
+        </>
       );
     default:
       assertNever(mode);
@@ -140,104 +153,109 @@ export function GolinkEntry(props: GolinkEntryProps) {
       }
     }
   }
+  const isError = keywordError || linkError;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      onClick={handleEdit}
-      className={cx(
-        "group flex flex-col my-4 rounded hover:bg-gray-50 hover:drop-shadow",
-        {
-          "drop-shadow": !viewMode,
-        },
-      )}
-    >
-      <div
-        className={cx("flex flex-row p-2 rounded", {
-          "bg-gray-50": !viewMode,
-          "rounded-b-none": !viewMode,
-        })}
+    <>
+      <form
+        onSubmit={handleSubmit}
+        onClick={handleEdit}
+        className={cx("group", "relative", "m-8")}
       >
-        <div>
-          <span className="font-mono font-bold bg-gray-700 text-white px-1">
-            go/
-          </span>
-        </div>
-        <div className="flex flex-col grow ml-1 mr-0">
-          <Editable
-            type="text"
-            name="keyword"
-            className="text-gray-700"
-            mode={viewMode ? "view" : "edit"}
-            placeholder="keyword"
-            value={keyword}
-            error={keywordError}
-            onChange={(ev) => setKeyword(ev.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-            autoFocus={true}
-            required={true}
-          />
-          <Editable
-            type="url"
-            name="link"
-            className="text-sm text-gray-500"
-            mode={viewMode ? "view" : "edit"}
-            placeholder="destination link"
-            value={link}
-            error={linkError}
-            onChange={(ev) => setLink(ev.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-            required={true}
-          />
+        <div
+          className={cx(
+            "grid grid-cols-4 items-start gap-y-2 gap-x-1",
+            "p-2 mb-2",
+            "rounded bg-gray-50",
+          )}
+        >
+          <label htmlFor="keyword" className="text-right">
+            <span className="font-mono font-bold bg-gray-700 text-white px-1">
+              go/
+            </span>
+          </label>
+          <div className="col-span-3 ">
+            <Editable
+              type="text"
+              name="keyword"
+              className="text-gray-700"
+              mode={viewMode ? "view" : "edit"}
+              placeholder="keyword"
+              value={keyword}
+              error={keywordError}
+              onChange={(ev) => setKeyword(ev.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus={true}
+              required={true}
+            />
+          </div>
+          <label htmlFor="link" className="text-right">
+            <span className="font-mono font-bold text-sm bg-gray-500 text-white px-1">
+              redirects to:
+            </span>
+          </label>
+          <div className="col-span-3">
+            <Editable
+              type="url"
+              name="link"
+              className="text-sm text-gray-500"
+              mode={viewMode ? "view" : "edit"}
+              placeholder="https://somewhere.url/with/a/really/long/path"
+              value={link}
+              hint={`Include %s anywhere in the link to expand text following ${
+                keyword || "keyword"
+              }/`}
+              error={linkError}
+              onChange={(ev) => setLink(ev.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              required={true}
+            />
+          </div>
         </div>
         <div
-          className={cx("invisible group-hover:visible", {
-            hidden: !viewMode,
-            block: viewMode,
+          className={cx("flex-row-reverse justify-between", {
+            hidden: viewMode,
+            flex: !viewMode,
           })}
         >
-          <Button className="shadow-none hover:shadow-none">
-            <EditIcon className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-      <div
-        className={cx("flex-col bg-gray-100 rounded-b py-2", {
-          hidden: viewMode,
-          flex: !viewMode,
-        })}
-      >
-        <div className="flex justify-end">
-          <Button
-            onClick={handleCancel}
-            disabled={mode === "editing"}
-            className={cx(
-              "bg-gray-500",
-              "text-xs text-white",
-              "outline-gray-600",
-              "hover:bg-gray-600 disabled:hover:bg-gray-500 focus-visible:bg-gray-600 ",
-            )}
-          >
-            <CancelIcon className="mr-1 h-4 w-4" />
-            <span>Cancel</span>
-          </Button>
           <Button
             type="submit"
-            disabled={mode === "editing" || !changed}
-            className={cx(
-              "bg-emerald-500",
-              "text-xs text-white font-semibold",
-              "outline-emerald-600",
-              "hover:bg-emerald-600 disabled:hover:bg-emerald-500 focus-visible:bg-emerald-600 ",
-            )}
+            disabled={mode === "editing" || !changed || isError}
+            className={cx()}
           >
             <SaveIcon className="mr-1 h-4 w-4" />
             <span>{isNew ? "Create" : "Update"}</span>
           </Button>
         </div>
-      </div>
-    </form>
+        <span className="absolute -top-4 -right-4">
+          <Button
+            className={cx(
+              "rounded-full w-8 h-8",
+              "transition-all",
+              "invisible opacity-0",
+              "group-hover:visible group-hover:opacity-100",
+              {
+                "inline-flex": viewMode,
+                hidden: !viewMode,
+              },
+            )}
+            onClick={handleEdit}
+          >
+            <EditIcon className="w-4 h-4" />
+          </Button>
+          <Button
+            className={cx("rounded-full w-8 h-8", {
+              "inline-flex": !viewMode,
+              hidden: viewMode,
+            })}
+            onClick={handleCancel}
+          >
+            <CancelIcon className="w-4 h-4" />
+          </Button>
+        </span>
+      </form>
+    </>
   );
 }

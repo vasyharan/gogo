@@ -1,30 +1,27 @@
 import cx from "classnames";
 
+type Mode = "primary" | "danger" | "default";
 type ButtonProps = React.DetailedHTMLProps<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   HTMLButtonElement
->;
+> & {
+  mode?: Mode;
+};
+
+function calcMode(props: ButtonProps): Mode {
+  const { mode, type = "button" } = props;
+  if (mode) return mode;
+  if (type === "submit") return "primary";
+  return "default";
+}
 export function Button(props: ButtonProps) {
   const { type = "button", className, disabled, children, ...rest } = props;
+  const mode = calcMode(props);
   return (
     <button
       type={type}
       disabled={disabled}
-      className={cx(
-        className,
-        "inline-flex items-center justify-center",
-        "py-1 px-2 mr-2",
-        "border border-transparent",
-        "rounded shadow-sm",
-        "leading-none",
-        "transform-gpu transition-all duration-150",
-        "outline-1 outline-offset-1",
-        "disabled:opacity-30",
-        "focus:outline",
-        {
-          "hover:shadow-lg hover:-translate-y-0.5": !disabled,
-        },
-      )}
+      className={cx(className, "button", mode)}
       {...rest}
     >
       {children}

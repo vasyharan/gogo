@@ -1,3 +1,38 @@
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+
+@layer components {
+  .button {
+    @apply inline-flex items-center justify-center 
+        py-1 px-2 
+        rounded
+        leading-none text-white
+        transform-gpu transition-all duration-150
+        outline-none ring-0
+        disabled:opacity-30
+        disabled:shadow-none
+        disabled:translate-y-0
+        hover:shadow-lg
+        focus:ring
+        hover:-translate-y-0.5;
+  }
+
+  .button.default {
+    @apply bg-gray-500;
+    @apply ring-gray-500;
+    @apply disabled:bg-gray-500;
+    @apply hover:bg-gray-700;
+    @apply focus:bg-gray-700;
+    @apply focus-visible:bg-gray-700;
+  }
+
+  .button.primary {
+    @apply bg-emerald-300;
+    @apply ring-emerald-300;
+    @apply disabled:bg-emerald-300;
+    @apply hover:bg-emerald-500;
+    @apply focus:bg-emerald-500;
+    @apply focus-visible:bg-emerald-500;
+  }
+}

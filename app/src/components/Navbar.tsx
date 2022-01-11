@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { SearchIcon } from "./Icons";
+import cx from "classnames";
 
 type NavbarProps = {
   query: string;
@@ -17,28 +18,37 @@ export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
         </span>
       </div>
       <div className="flex grow">
-        <div className="mx-2 flex grow items-center text-gray-500 focus-within:text-gray-700">
-          <div className="">
-            <SearchIcon className="w-4 h-4" />
-          </div>
+        <div
+          className={cx(
+            "mx-2 px-1 leading-6",
+            "flex grow items-center ",
+            "border-gray-700",
+            "focus-within:border-b",
+            "text-gray-500 focus-within:text-gray-700"
+          )}
+        >
+          <SearchIcon className="w-4 h-4" />
           <input
             type="text"
-            className="w-full p-0 mx-2 text-sm border-0 border-b border-transparent placeholder-gray-500 focus:placeholder-gray-300 focus:ring-0 focus:border-gray-500"
+            className={cx(
+              "appearance-none",
+              "border-0",
+              "w-full",
+              "py-1 px-2",
+              "leading-tight",
+              "text-sm",
+              "placeholder-gray-300",
+              "focus:ring-0",
+              "focus:placeholder-gray-400",
+              "selection:bg-gray-700/20"
+            )}
             placeholder="Search..."
             value={query}
             onChange={(ev) => onQueryChange(ev.target.value)}
           />
         </div>
-        <Button
-          type="button"
-          className="text-sm text-white font-semibold
-          bg-gray-700 
-          outline-gray-900
-          hover:bg-gray-900 
-          focus-visible:bg-gray-900"
-          onClick={() => onNewLink()}
-        >
-          <span>New link</span>
+        <Button type="button" onClick={() => onNewLink()}>
+          <span className="text-sm font-medium">New link</span>
         </Button>
       </div>
     </nav>
