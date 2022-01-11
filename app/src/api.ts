@@ -29,15 +29,6 @@ export async function listLinks(q: string): Promise<ApiResponse<Golink[]>> {
   return await toApiResponse(resp);
 }
 
-export async function updateLink(link: Golink): Promise<ApiResponse<Golink>> {
-  const resp = await fetch(`/go/api/link/${link.id}`, {
-    method: "PUT",
-    headers: DEFAULT_HEADERS,
-    body: JSON.stringify(link),
-  });
-  return await toApiResponse(resp);
-}
-
 export async function createLink(
   link: NewGolink,
 ): Promise<ApiResponse<Golink>> {
@@ -47,5 +38,14 @@ export async function createLink(
     body: JSON.stringify(link),
   });
 
+  return await toApiResponse(resp);
+}
+
+export async function updateLink(link: Golink): Promise<ApiResponse<Golink>> {
+  const resp = await fetch(`/go/api/link/${link.id}`, {
+    method: "PUT",
+    headers: DEFAULT_HEADERS,
+    body: JSON.stringify(link),
+  });
   return await toApiResponse(resp);
 }

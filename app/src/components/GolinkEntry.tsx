@@ -4,7 +4,7 @@ import { ApiResponse } from "../api";
 import { assertNever } from "../assert";
 import { Golink, NewGolink } from "../models";
 import { Button } from "./Button";
-import { CancelIcon, EditIcon, SaveIcon } from "./Icons";
+import { ArchiveIcon, CancelIcon, EditIcon, SaveIcon } from "./Icons";
 type EditableProps = React.DetailedHTMLProps<
   React.InputHTMLAttributes<HTMLInputElement>,
   HTMLInputElement
@@ -76,12 +76,6 @@ type State =
       linkError?: string;
     };
 
-type GolinkEntryProps = {
-  golink: NewGolink | Golink;
-  save: (golink: NewGolink | Golink) => Promise<ApiResponse<Golink>>;
-  onCancel?: () => void;
-};
-
 function isValidURL(s: string): boolean {
   try {
     const url = new URL(s);
@@ -91,7 +85,30 @@ function isValidURL(s: string): boolean {
   }
 }
 
-export function GolinkEntry(props: GolinkEntryProps) {
+type NewGolinkProps = {
+  golink: NewGolink;
+  onCreate: (golink: NewGolink) => Promise<ApiResponse<Golink>>;
+  onCancel: () => void;
+};
+export function NewGolink({ golink, onCreate, onCancel }: NewGolinkProps) {
+  return <GolinkEntry golink={golink} onSave={onCreate} onCancel={onCancel} />;
+}
+
+type EditGolinkProps = {
+  golink: Golink;
+  onUpdate: (golink: Golink) => Promise<ApiResponse<Golink>>;
+};
+export function EditGolink({ golink, onUpdate }: EditGolinkProps) {
+  return <GolinkEntry golink={golink} onSave={onUpdate} onCancel={() => {}} />;
+}
+
+type GolinkEntryProps<T extends NewGolink | Golink> = {
+  golink: T;
+  onSave: (golink: T) => Promise<ApiResponse<Golink>>;
+  onCancel: () => void;
+};
+
+function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
   const { golink } = props;
   const isNew = !("id" in golink);
 
@@ -100,23 +117,6 @@ export function GolinkEntry(props: GolinkEntryProps) {
   );
   const [keyword, setKeyword] = useState(golink.keyword);
   const [link, setLink] = useState(golink.link);
-
-  async function handleSubmit(ev) {
-    console.log("handleSubmit");
-    ev.preventDefault();
-    setState({ mode: "editing" });
-    const resp = await props.save({ ...golink, keyword, link });
-    if (resp.type === "success") {
-      setState({ mode: "view" });
-    } else if (resp.type === "error") {
-      let keywordError = "";
-      if (resp.error.code === 101) {
-        keywordError = "A link with the same keyword already exists!";
-      }
-      setState({ mode: "edit", keywordError });
-      console.error(resp.error);
-    } else assertNever(resp);
-  }
 
   function handleEdit(ev) {
     console.log("handleEdit");
@@ -127,13 +127,52 @@ export function GolinkEntry(props: GolinkEntryProps) {
     }
   }
 
+  async function handleSubmit(ev) {
+    console.log("handleSubmit");
+    ev.preventDefault();
+    setState({ mode: "editing" });
+    const resp = await props.onSave({
+      ...golink,
+      keyword,
+      link,
+      archived: isNew ? undefined : false,
+    });
+    if (resp.type === "success") {
+      setState({ mode: "view" });
+    } else if (resp.type === "error") {
+      let keywordError = "";
+      if (resp.error.code === 101) {
+        keywordError = "A link with the same keyword already exists!";
+      } else {
+        console.error(resp.error);
+      }
+      setState({ mode: "edit", keywordError });
+    } else assertNever(resp);
+  }
+
+  async function handleArchive(ev) {
+    console.log("handleArchive");
+    ev.stopPropagation();
+    if ("id" in golink) {
+      setState({ mode: "editing" });
+      const resp = await props.onSave({ ...golink, archived: true });
+      if (resp.type === "success") {
+        setState({ mode: "view" });
+      } else if (resp.type === "error") {
+        console.error(resp.error);
+      } else assertNever(resp);
+    } else {
+      console.error("how did this happen?");
+    }
+  }
+
   function handleCancel(ev) {
     console.log("handleCancel");
     ev.stopPropagation();
     setKeyword(golink.keyword);
     setLink(golink.link);
     setState({ mode: "view" });
-    if (!!props.onCancel) props.onCancel();
+    props.onCancel();
   }
 
   const { mode } = state;
@@ -167,18 +206,23 @@ export function GolinkEntry(props: GolinkEntryProps) {
             "grid grid-cols-4 items-start gap-y-2 gap-x-1",
             "p-2 mb-2",
             "rounded bg-gray-50",
+            {
+              "opacity-80": viewMode && !isNew && golink.archived,
+            },
           )}
         >
           <label htmlFor="keyword" className="text-right">
             <span className="font-mono font-bold bg-gray-700 text-white px-1">
-              go/
+              {isNew || !golink.archived ? "go/" : "archived/"}
             </span>
           </label>
           <div className="col-span-3 ">
             <Editable
               type="text"
               name="keyword"
-              className="text-gray-700"
+              className={cx("text-gray-700", {
+                "line-through": viewMode && !isNew && golink.archived,
+              })}
               mode={viewMode ? "view" : "edit"}
               placeholder="keyword"
               value={keyword}
@@ -199,7 +243,9 @@ export function GolinkEntry(props: GolinkEntryProps) {
             <Editable
               type="url"
               name="link"
-              className="text-sm text-gray-500"
+              className={cx("text-sm text-gray-500", {
+                "line-through": viewMode && !isNew && golink.archived,
+              })}
               mode={viewMode ? "view" : "edit"}
               placeholder="https://somewhere.url/with/a/really/long/path"
               value={link}
@@ -215,18 +261,43 @@ export function GolinkEntry(props: GolinkEntryProps) {
           </div>
         </div>
         <div
-          className={cx("flex-row-reverse justify-between", {
+          className={cx("flex-row-reverse", {
             hidden: viewMode,
             flex: !viewMode,
           })}
         >
           <Button
             type="submit"
-            disabled={mode === "editing" || !changed || isError}
+            disabled={
+              mode === "editing" ||
+              isError ||
+              (isNew && !changed) ||
+              (!isNew && !golink.archived && !changed)
+            }
             className={cx()}
           >
             <SaveIcon className="mr-1 h-4 w-4" />
-            <span>{isNew ? "Create" : "Update"}</span>
+            <span>
+              {isNew
+                ? "Create"
+                : golink.archived
+                ? changed
+                  ? "Restore and update"
+                  : "Restore"
+                : "Update"}
+            </span>
+          </Button>
+          <Button
+            type="button"
+            mode="warn"
+            onClick={handleArchive}
+            disabled={mode === "editing"}
+            className={cx("mr-2", {
+              hidden: isNew || golink.archived,
+            })}
+          >
+            <ArchiveIcon className="mr-1 h-4 w-4" />
+            <span>{"Archive"}</span>
           </Button>
         </div>
         <span className="absolute -top-4 -right-4">

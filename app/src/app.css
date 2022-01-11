@@ -10,7 +10,6 @@
         leading-none text-white
         transform-gpu transition-all duration-150
         outline-none ring-0
-        disabled:opacity-30
         disabled:shadow-none
         disabled:translate-y-0
         hover:shadow-lg
@@ -19,20 +18,32 @@
   }
 
   .button.default {
-    @apply bg-gray-500;
-    @apply ring-gray-500;
-    @apply disabled:bg-gray-500;
-    @apply hover:bg-gray-700;
-    @apply focus:bg-gray-700;
-    @apply focus-visible:bg-gray-700;
+    @apply bg-gray-500
+        ring-gray-500
+        hover:bg-gray-700
+        focus:bg-gray-700
+        focus-visible:bg-gray-700
+        disabled:bg-gray-100
+        disabled:text-gray-300;
   }
 
   .button.primary {
-    @apply bg-emerald-300;
-    @apply ring-emerald-300;
-    @apply disabled:bg-emerald-300;
-    @apply hover:bg-emerald-500;
-    @apply focus:bg-emerald-500;
-    @apply focus-visible:bg-emerald-500;
+    @apply bg-emerald-300
+        ring-emerald-300
+        hover:bg-emerald-500
+        focus:bg-emerald-500
+        focus-visible:bg-emerald-500
+        disabled:bg-gray-100
+        disabled:text-gray-300;
+  }
+
+  .button.warn {
+    @apply bg-orange-300
+        ring-orange-300
+        hover:bg-orange-500
+        focus:bg-orange-500
+        focus-visible:bg-orange-500
+        disabled:bg-gray-100
+        disabled:text-gray-300;
   }
 }

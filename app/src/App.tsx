@@ -1,13 +1,13 @@
 import { debounce } from "lodash";
 import { useEffect, useState } from "react";
-import * as api from "./api";
+import { createLink, listLinks, updateLink } from "./api";
 import { assertNever } from "./assert";
-import { GolinkEntry } from "./components/GolinkEntry";
+import { EditGolink, NewGolink } from "./components/GolinkEntry";
 import { Navbar } from "./components/Navbar";
 import { Golink } from "./models";
 
 async function _loadLinks(q: string, setGolinks: (golinks: Golink[]) => void) {
-  const resp = await api.listLinks(q);
+  const resp = await listLinks(q);
   if (resp.type === "success") {
     const links = resp.value;
     setGolinks(links);
@@ -29,24 +29,24 @@ export function App() {
     loadLinks(query, setGolinks);
   }, [query]);
 
-  async function updateLink(link) {
-    const resp = await api.updateLink(link);
+  async function handleCreate(link) {
+    const resp = await createLink(link);
+    if (resp.type === "success") {
+      const created = resp.value;
+      setNewLinkVisible(false);
+      setGolinks([...golinks, created]);
+    }
+    return resp;
+  }
+
+  async function handleUpdate(link) {
+    const resp = await updateLink(link);
     if (resp.type === "success") {
       const updated = resp.value;
       const updatedLinks = golinks.map((link) =>
         link.id === updated.id ? updated : link,
       );
       setGolinks(updatedLinks);
-    }
-    return resp;
-  }
-
-  async function createLink(link) {
-    const resp = await api.createLink(link);
-    if (resp.type === "success") {
-      const created = resp.value;
-      setNewLinkVisible(false);
-      setGolinks([...golinks, created]);
     }
     return resp;
   }
@@ -59,14 +59,14 @@ export function App() {
         onNewLink={() => setNewLinkVisible(true)}
       ></Navbar>
       {newLinkVisible && (
-        <GolinkEntry
+        <NewGolink
           golink={{ keyword: "", link: "" }}
-          save={createLink}
+          onCreate={handleCreate}
           onCancel={() => setNewLinkVisible(false)}
         />
       )}
       {golinks.map((link) => (
-        <GolinkEntry key={link.id} golink={link} save={updateLink} />
+        <EditGolink key={link.id} golink={link} onUpdate={handleUpdate} />
       ))}
     </div>
   );

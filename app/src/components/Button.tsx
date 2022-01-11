@@ -1,6 +1,6 @@
 import cx from "classnames";
 
-type Mode = "primary" | "danger" | "default";
+type Mode = "primary" | "warn" | "default";
 type ButtonProps = React.DetailedHTMLProps<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   HTMLButtonElement
