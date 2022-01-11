@@ -5,5 +5,5 @@ export type NewGolink = {
 
 export type Golink = NewGolink & {
   id: number;
-  archived: boolean;
+  active: boolean;
 };

@@ -43,22 +43,22 @@ function Editable(props: EditableProps) {
             {...rest}
           />
           <div className="mt-1">
-            <p
+            <span
               className={cx("text-xs italic", "text-gray-700", {
                 hidden: !hint || isError,
                 block: hint,
               })}
             >
               {hint}
-            </p>
-            <p
+            </span>
+            <span
               className={cx("text-xs italic", "text-rose-600", {
                 hidden: !isError,
                 block: isError,
               })}
             >
               {error}
-            </p>
+            </span>
           </div>
         </>
       );
@@ -117,6 +117,16 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
   );
   const [keyword, setKeyword] = useState(golink.keyword);
   const [link, setLink] = useState(golink.link);
+  const [active, setActive] = useState(isNew ? true : golink.active);
+
+  function handleEdit(ev) {
+    console.log("handleEdit");
+    ev.stopPropagation();
+    if (state.mode === "view") {
+      ev.preventDefault();
+      setState({ mode: "edit" });
+    }
+  }
 
   function handleEdit(ev) {
     console.log("handleEdit");
@@ -135,7 +145,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
       ...golink,
       keyword,
       link,
-      archived: isNew ? undefined : false,
+      active: isNew ? undefined : active,
     });
     if (resp.type === "success") {
       setState({ mode: "view" });
@@ -150,22 +160,6 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
     } else assertNever(resp);
   }
 
-  async function handleArchive(ev) {
-    console.log("handleArchive");
-    ev.stopPropagation();
-    if ("id" in golink) {
-      setState({ mode: "editing" });
-      const resp = await props.onSave({ ...golink, archived: true });
-      if (resp.type === "success") {
-        setState({ mode: "view" });
-      } else if (resp.type === "error") {
-        console.error(resp.error);
-      } else assertNever(resp);
-    } else {
-      console.error("how did this happen?");
-    }
-  }
-
   function handleCancel(ev) {
     console.log("handleCancel");
     ev.stopPropagation();
@@ -177,7 +171,11 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
 
   const { mode } = state;
   const viewMode = mode === "view";
-  const changed = !(keyword === golink.keyword && link === golink.link);
+  const changed = !(
+    keyword === golink.keyword &&
+    link === golink.link &&
+    (isNew ? true : active === golink.active)
+  );
 
   let { keywordError = "", linkError = "" } = state as any;
   if (state.mode === "edit") {
@@ -207,22 +205,20 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             "p-2 mb-2",
             "rounded bg-gray-50",
             {
-              "opacity-80": viewMode && !isNew && golink.archived,
+              "opacity-80": viewMode && !isNew && !golink.active,
             },
           )}
         >
           <label htmlFor="keyword" className="text-right">
             <span className="font-mono font-bold bg-gray-700 text-white px-1">
-              {isNew || !golink.archived ? "go/" : "archived/"}
+              go/
             </span>
           </label>
           <div className="col-span-3 ">
             <Editable
               type="text"
               name="keyword"
-              className={cx("text-gray-700", {
-                "line-through": viewMode && !isNew && golink.archived,
-              })}
+              className="text-gray-700"
               mode={viewMode ? "view" : "edit"}
               placeholder="keyword"
               value={keyword}
@@ -235,7 +231,14 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             />
           </div>
           <label htmlFor="link" className="text-right">
-            <span className="font-mono font-bold text-sm bg-gray-500 text-white px-1">
+            <span
+              className={cx(
+                "font-mono font-bold text-sm bg-gray-500 text-white px-1",
+                {
+                  "line-through": viewMode && !isNew && !golink.active,
+                },
+              )}
+            >
               redirects to:
             </span>
           </label>
@@ -243,9 +246,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             <Editable
               type="url"
               name="link"
-              className={cx("text-sm text-gray-500", {
-                "line-through": viewMode && !isNew && golink.archived,
-              })}
+              className="text-sm text-gray-500"
               mode={viewMode ? "view" : "edit"}
               placeholder="https://somewhere.url/with/a/really/long/path"
               value={link}
@@ -259,6 +260,34 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
               required={true}
             />
           </div>
+          <label
+            htmlFor="active"
+            className={cx("text-right", { hidden: viewMode || isNew })}
+          >
+            <span className="font-mono font-bold text-sm bg-gray-500 text-white px-1">
+              enabled:
+            </span>
+          </label>
+          <div className={cx("col-span-3", { hidden: viewMode || isNew })}>
+            <input
+              type="checkbox"
+              name="active"
+              checked={active}
+              onChange={(ev) => setActive(ev.target.checked)}
+              className={cx(
+                "appearance-none",
+                "rounded-sm",
+                "shadow",
+                "transform-gpu transition-all duration-1500",
+                "text-gray-700",
+                "border-gray-500",
+                "focus:ring-gray-400",
+                "focus:ring-1",
+                "focus:ring-offset-0",
+                "focus:border-gray-400",
+              )}
+            />
+          </div>
         </div>
         <div
           className={cx("flex-row-reverse", {
@@ -268,36 +297,11 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
         >
           <Button
             type="submit"
-            disabled={
-              mode === "editing" ||
-              isError ||
-              (isNew && !changed) ||
-              (!isNew && !golink.archived && !changed)
-            }
+            disabled={mode === "editing" || isError || !changed}
             className={cx()}
           >
             <SaveIcon className="mr-1 h-4 w-4" />
-            <span>
-              {isNew
-                ? "Create"
-                : golink.archived
-                ? changed
-                  ? "Restore and update"
-                  : "Restore"
-                : "Update"}
-            </span>
-          </Button>
-          <Button
-            type="button"
-            mode="warn"
-            onClick={handleArchive}
-            disabled={mode === "editing"}
-            className={cx("mr-2", {
-              hidden: isNew || golink.archived,
-            })}
-          >
-            <ArchiveIcon className="mr-1 h-4 w-4" />
-            <span>{"Archive"}</span>
+            <span>{isNew ? "Create" : "Update"}</span>
           </Button>
         </div>
         <span className="absolute -top-4 -right-4">
