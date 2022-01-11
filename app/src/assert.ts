@@ -4,7 +4,7 @@ export function assertNever(value: never, noThrow?: boolean): never {
   }
 
   throw new Error(
-    `Unhandled discriminated union member: ${JSON.stringify(value)}`
+    `Unhandled discriminated union member: ${JSON.stringify(value)}`,
   );
 }
 
@@ -13,7 +13,7 @@ class AssertionError extends Error {}
 export function assert(
   cond: boolean,
   message: string,
-  noThrow?: boolean
+  noThrow?: boolean,
 ): void {
   if (!cond) {
     const err = new AssertionError(message);

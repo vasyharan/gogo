@@ -34,7 +34,7 @@ export function App() {
     if (resp.type === "success") {
       const updated = resp.value;
       const updatedLinks = golinks.map((link) =>
-        link.id === updated.id ? updated : link
+        link.id === updated.id ? updated : link,
       );
       setGolinks(updatedLinks);
     }

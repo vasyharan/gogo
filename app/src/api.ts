@@ -39,7 +39,7 @@ export async function updateLink(link: Golink): Promise<ApiResponse<Golink>> {
 }
 
 export async function createLink(
-  link: NewGolink
+  link: NewGolink,
 ): Promise<ApiResponse<Golink>> {
   const resp = await fetch(`/go/api/link`, {
     method: "POST",

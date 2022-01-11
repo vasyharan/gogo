@@ -23,7 +23,7 @@ export function Button(props: ButtonProps) {
         "focus:outline",
         {
           "hover:shadow-lg hover:-translate-y-0.5": !disabled,
-        }
+        },
       )}
       {...rest}
     >

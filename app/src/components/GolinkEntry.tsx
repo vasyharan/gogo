@@ -34,7 +34,7 @@ function Editable(props: EditableProps) {
                   isError,
                 "placeholder-gray-300 border-transparent focus:border-gray-300":
                   !isError,
-              }
+              },
             )}
             value={value}
             {...rest}
@@ -83,7 +83,7 @@ export function GolinkEntry(props: GolinkEntryProps) {
   const isNew = !("id" in golink);
 
   const [state, setState] = useState<State>(
-    isNew ? { mode: "edit" } : { mode: "view" }
+    isNew ? { mode: "edit" } : { mode: "view" },
   );
   const [keyword, setKeyword] = useState(golink.keyword);
   const [link, setLink] = useState(golink.link);
@@ -149,7 +149,7 @@ export function GolinkEntry(props: GolinkEntryProps) {
         "group flex flex-col my-4 rounded hover:bg-gray-50 hover:drop-shadow",
         {
           "drop-shadow": !viewMode,
-        }
+        },
       )}
     >
       <div
@@ -217,7 +217,7 @@ export function GolinkEntry(props: GolinkEntryProps) {
               "bg-gray-500",
               "text-xs text-white",
               "outline-gray-600",
-              "hover:bg-gray-600 disabled:hover:bg-gray-500 focus-visible:bg-gray-600 "
+              "hover:bg-gray-600 disabled:hover:bg-gray-500 focus-visible:bg-gray-600 ",
             )}
           >
             <CancelIcon className="mr-1 h-4 w-4" />
@@ -230,7 +230,7 @@ export function GolinkEntry(props: GolinkEntryProps) {
               "bg-emerald-500",
               "text-xs text-white font-semibold",
               "outline-emerald-600",
-              "hover:bg-emerald-600 disabled:hover:bg-emerald-500 focus-visible:bg-emerald-600 "
+              "hover:bg-emerald-600 disabled:hover:bg-emerald-500 focus-visible:bg-emerald-600 ",
             )}
           >
             <SaveIcon className="mr-1 h-4 w-4" />
