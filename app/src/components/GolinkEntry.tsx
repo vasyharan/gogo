@@ -208,6 +208,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
           <div className="col-span-3 ">
             <Editable
               type="text"
+              id="keyword"
               name="keyword"
               className="text-gray-700"
               mode={viewMode ? "view" : "edit"}
@@ -236,6 +237,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
           <div className="col-span-3">
             <Editable
               type="url"
+              id="link"
               name="link"
               className="text-sm text-gray-500"
               mode={viewMode ? "view" : "edit"}
@@ -262,6 +264,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
           <div className={cx("col-span-3", { hidden: viewMode || isNew })}>
             <input
               type="checkbox"
+              id="active"
               name="active"
               checked={active}
               onChange={(ev) => setActive(ev.target.checked)}
