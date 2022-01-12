@@ -128,15 +128,6 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
     }
   }
 
-  function handleEdit(ev) {
-    console.log("handleEdit");
-    ev.stopPropagation();
-    if (state.mode === "view") {
-      ev.preventDefault();
-      setState({ mode: "edit" });
-    }
-  }
-
   async function handleSubmit(ev) {
     console.log("handleSubmit");
     ev.preventDefault();
@@ -304,6 +295,18 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             <span>{isNew ? "Create" : "Update"}</span>
           </Button>
         </div>
+        <span className="absolute -top-4 -left-4">
+          <span
+            className={cx(
+              "text-xs text-white italic rounded-full mr-2 px-2 py-1 bg-gray-500",
+              {
+                hidden: isNew || !viewMode || golink.active,
+              },
+            )}
+          >
+            disabled
+          </span>
+        </span>
         <span className="absolute -top-4 -right-4">
           <Button
             className={cx(
