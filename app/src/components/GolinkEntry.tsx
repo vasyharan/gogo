@@ -1,5 +1,5 @@
 import cx from "classnames";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiResponse } from "../api";
 import { assertNever } from "../assert";
 import { Golink, NewGolink } from "../models";
@@ -67,14 +67,7 @@ function Editable(props: EditableProps) {
   }
 }
 
-type State =
-  | { mode: "view" }
-  | { mode: "editing" }
-  | {
-      mode: "edit";
-      keywordError?: string;
-      linkError?: string;
-    };
+export type Mode = "view" | "edit";
 
 function isValidURL(s: string): boolean {
   try {
@@ -85,258 +78,287 @@ function isValidURL(s: string): boolean {
   }
 }
 
-type NewGolinkProps = {
+type CreateGolinkProps = {
   golink: NewGolink;
-  onCreate: (golink: NewGolink) => Promise<ApiResponse<Golink>>;
-  onCancel: () => void;
+  errors: GolinkEntryErrors;
+  changed: boolean;
+  onSubmit: (golink: NewGolink) => Promise<ApiResponse<Golink>>;
+  onChange: <K extends keyof NewGolink = keyof NewGolink>(
+    field: K,
+    value: NewGolink[K],
+  ) => void;
+  onToggleEdit: (enabled: boolean) => void;
 };
-export function NewGolink({ golink, onCreate, onCancel }: NewGolinkProps) {
-  return <GolinkEntry golink={golink} onSave={onCreate} onCancel={onCancel} />;
+export function CreateGolink({
+  golink,
+  errors,
+  changed,
+  onSubmit,
+  onChange,
+  onToggleEdit,
+}: CreateGolinkProps) {
+  return (
+    <GolinkEntry
+      golink={golink}
+      errors={errors}
+      changed={changed}
+      mode="edit"
+      onChange={onChange}
+      onSubmit={onSubmit}
+      onToggleEdit={onToggleEdit}
+    />
+  );
 }
 
 type EditGolinkProps = {
   golink: Golink;
-  onUpdate: (golink: Golink) => Promise<ApiResponse<Golink>>;
+  mode: Mode;
+  changed: boolean;
+  errors: GolinkEntryErrors;
+  onSubmit: (golink: Golink) => Promise<ApiResponse<Golink>>;
+  onChange: <K extends keyof NewGolink = keyof NewGolink>(
+    field: K,
+    value: NewGolink[K],
+  ) => void;
+  onToggleEdit: (enabled: boolean) => void;
 };
-export function EditGolink({ golink, onUpdate }: EditGolinkProps) {
-  return <GolinkEntry golink={golink} onSave={onUpdate} onCancel={() => {}} />;
+export function EditGolink({
+  golink,
+  errors,
+  mode,
+  changed,
+  onSubmit,
+  onChange,
+  onToggleEdit,
+}: EditGolinkProps) {
+  return (
+    <GolinkEntry
+      golink={golink}
+      errors={errors}
+      mode={mode}
+      changed={changed}
+      onChange={onChange}
+      onSubmit={onSubmit}
+      onToggleEdit={onToggleEdit}
+    />
+  );
 }
 
+export type GolinkEntryErrors = {
+  keyword: string;
+  link: string;
+};
 type GolinkEntryProps<T extends NewGolink | Golink> = {
   golink: T;
-  onSave: (golink: T) => Promise<ApiResponse<Golink>>;
-  onCancel: () => void;
+  mode: Mode;
+  changed: boolean;
+  errors: GolinkEntryErrors;
+  onSubmit: (golink: T) => Promise<ApiResponse<Golink>>;
+  onChange: <K extends keyof NewGolink = keyof NewGolink>(
+    field: K,
+    value: NewGolink[K],
+  ) => void;
+  onToggleEdit: (enabled: boolean) => void;
 };
 
 function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
-  const { golink } = props;
+  const { golink, mode } = props;
   const isNew = !("id" in golink);
 
-  const [state, setState] = useState<State>(
-    isNew ? { mode: "edit" } : { mode: "view" },
-  );
-  const [keyword, setKeyword] = useState(golink.keyword);
-  const [link, setLink] = useState(golink.link);
-  const [active, setActive] = useState(isNew ? true : golink.active);
+  const [submitting, setSubmitting] = useState(false);
 
   function handleEdit(ev) {
     console.log("handleEdit");
     ev.stopPropagation();
-    if (state.mode === "view") {
-      ev.preventDefault();
-      setState({ mode: "edit" });
-    }
+    props.onToggleEdit(true);
   }
 
   async function handleSubmit(ev) {
     console.log("handleSubmit");
     ev.preventDefault();
-    setState({ mode: "editing" });
-    const resp = await props.onSave({
-      ...golink,
-      keyword,
-      link,
-      active: isNew ? undefined : active,
-    });
-    if (resp.type === "success") {
-      setState({ mode: "view" });
-    } else if (resp.type === "error") {
-      let keywordError = "";
-      if (resp.error.code === 101) {
-        keywordError = "A link with the same keyword already exists!";
-      } else {
-        console.error(resp.error);
-      }
-      setState({ mode: "edit", keywordError });
-    } else assertNever(resp);
+
+    setSubmitting(true);
+    await props.onSubmit({ ...golink });
+    setSubmitting(false);
   }
 
   function handleCancel(ev) {
     console.log("handleCancel");
     ev.stopPropagation();
-    setKeyword(golink.keyword);
-    setLink(golink.link);
-    setState({ mode: "view" });
-    props.onCancel();
+    props.onToggleEdit(false);
   }
 
-  const { mode } = state;
   const viewMode = mode === "view";
-  const changed = !(
-    keyword === golink.keyword &&
-    link === golink.link &&
-    (isNew ? true : active === golink.active)
-  );
 
-  let { keywordError = "", linkError = "" } = state as any;
-  if (state.mode === "edit") {
-    if (!keywordError) {
-      if (keyword === "") {
+  let { keyword: keywordError, link: linkError } = props.errors;
+  if (mode === "edit") {
+    if (keywordError === "") {
+      if (golink.keyword === "") {
         keywordError = "A keyword is required";
       }
     }
-    if (!linkError) {
-      if (!isValidURL(link)) {
+
+    if (linkError === "") {
+      if (!isValidURL(golink.link)) {
         linkError = "A link is must be valid HTTP/HTTPS URL";
       }
     }
   }
-  const isError = keywordError || linkError;
+  const isError = !!keywordError || !!linkError;
 
   return (
-    <>
-      <form
-        onSubmit={handleSubmit}
-        onClick={handleEdit}
-        className={cx("group", "relative", "m-8")}
+    <form
+      onSubmit={handleSubmit}
+      onClick={handleEdit}
+      className={cx("group", "relative", "m-8")}
+    >
+      <div
+        className={cx(
+          "grid grid-cols-4 items-start gap-y-2 gap-x-1",
+          "p-2 mb-2",
+          "rounded bg-gray-50",
+          {
+            "opacity-80": viewMode && !isNew && !golink.active,
+          },
+        )}
       >
-        <div
+        <label htmlFor="keyword" className="text-right">
+          <span className="font-mono font-bold bg-gray-700 text-white px-1">
+            go/
+          </span>
+        </label>
+        <div className="col-span-3 ">
+          <Editable
+            type="text"
+            id="keyword"
+            name="keyword"
+            className="text-gray-700"
+            mode={viewMode ? "view" : "edit"}
+            placeholder="keyword"
+            value={golink.keyword}
+            error={keywordError}
+            onChange={(ev) => props.onChange("keyword", ev.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            autoFocus={true}
+            required={true}
+          />
+        </div>
+        <label htmlFor="link" className="text-right">
+          <span
+            className={cx(
+              "font-mono font-bold text-sm bg-gray-500 text-white px-1",
+              {
+                "line-through": viewMode && !isNew && !golink.active,
+              },
+            )}
+          >
+            redirects to:
+          </span>
+        </label>
+        <div className="col-span-3">
+          <Editable
+            type="url"
+            id="link"
+            name="link"
+            className="text-sm text-gray-500"
+            mode={viewMode ? "view" : "edit"}
+            placeholder="https://somewhere.url/with/a/really/long/path"
+            value={golink.link}
+            hint={`Include %s anywhere in the link to expand text following ${
+              golink.keyword || "keyword"
+            }/`}
+            error={linkError}
+            onChange={(ev) => props.onChange("link", ev.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            required={true}
+          />
+        </div>
+        <label
+          htmlFor="active"
+          className={cx("text-right", { hidden: viewMode || isNew })}
+        >
+          <span className="font-mono font-bold text-sm bg-gray-500 text-white px-1">
+            enabled:
+          </span>
+        </label>
+        <div className={cx("col-span-3", { hidden: viewMode || isNew })}>
+          <input
+            type="checkbox"
+            id="active"
+            name="active"
+            checked={isNew ? true : golink.active}
+            onClick={(ev) => ev.stopPropagation()}
+            onChange={(ev) => props.onChange("active", ev.target.checked)}
+            className={cx(
+              "appearance-none",
+              "rounded-sm",
+              "shadow",
+              "transform-gpu transition-all duration-1500",
+              "text-gray-700",
+              "border-gray-500",
+              "focus:ring-gray-400",
+              "focus:ring-1",
+              "focus:ring-offset-0",
+              "focus:border-gray-400",
+            )}
+          />
+        </div>
+      </div>
+      <div
+        className={cx("flex-row-reverse", {
+          hidden: viewMode,
+          flex: !viewMode,
+        })}
+      >
+        <Button
+          type="submit"
+          disabled={submitting || isError || !props.changed}
+          className={cx()}
+        >
+          <SaveIcon className="mr-1 h-4 w-4" />
+          <span>{isNew ? "Create" : "Update"}</span>
+        </Button>
+      </div>
+      <span className="absolute -top-4 -left-4">
+        <span
           className={cx(
-            "grid grid-cols-4 items-start gap-y-2 gap-x-1",
-            "p-2 mb-2",
-            "rounded bg-gray-50",
+            "text-xs text-white italic rounded-full mr-2 px-2 py-1 bg-gray-500",
             {
-              "opacity-80": viewMode && !isNew && !golink.active,
+              hidden: isNew || !viewMode || golink.active,
             },
           )}
         >
-          <label htmlFor="keyword" className="text-right">
-            <span className="font-mono font-bold bg-gray-700 text-white px-1">
-              go/
-            </span>
-          </label>
-          <div className="col-span-3 ">
-            <Editable
-              type="text"
-              id="keyword"
-              name="keyword"
-              className="text-gray-700"
-              mode={viewMode ? "view" : "edit"}
-              placeholder="keyword"
-              value={keyword}
-              error={keywordError}
-              onChange={(ev) => setKeyword(ev.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              autoFocus={true}
-              required={true}
-            />
-          </div>
-          <label htmlFor="link" className="text-right">
-            <span
-              className={cx(
-                "font-mono font-bold text-sm bg-gray-500 text-white px-1",
-                {
-                  "line-through": viewMode && !isNew && !golink.active,
-                },
-              )}
-            >
-              redirects to:
-            </span>
-          </label>
-          <div className="col-span-3">
-            <Editable
-              type="url"
-              id="link"
-              name="link"
-              className="text-sm text-gray-500"
-              mode={viewMode ? "view" : "edit"}
-              placeholder="https://somewhere.url/with/a/really/long/path"
-              value={link}
-              hint={`Include %s anywhere in the link to expand text following ${
-                keyword || "keyword"
-              }/`}
-              error={linkError}
-              onChange={(ev) => setLink(ev.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              required={true}
-            />
-          </div>
-          <label
-            htmlFor="active"
-            className={cx("text-right", { hidden: viewMode || isNew })}
-          >
-            <span className="font-mono font-bold text-sm bg-gray-500 text-white px-1">
-              enabled:
-            </span>
-          </label>
-          <div className={cx("col-span-3", { hidden: viewMode || isNew })}>
-            <input
-              type="checkbox"
-              id="active"
-              name="active"
-              checked={active}
-              onChange={(ev) => setActive(ev.target.checked)}
-              className={cx(
-                "appearance-none",
-                "rounded-sm",
-                "shadow",
-                "transform-gpu transition-all duration-1500",
-                "text-gray-700",
-                "border-gray-500",
-                "focus:ring-gray-400",
-                "focus:ring-1",
-                "focus:ring-offset-0",
-                "focus:border-gray-400",
-              )}
-            />
-          </div>
-        </div>
-        <div
-          className={cx("flex-row-reverse", {
-            hidden: viewMode,
-            flex: !viewMode,
-          })}
+          disabled
+        </span>
+      </span>
+      <span className="absolute -top-4 -right-4">
+        <Button
+          className={cx(
+            "rounded-full w-8 h-8",
+            "transition-all",
+            "invisible opacity-0",
+            "group-hover:visible group-hover:opacity-100",
+            {
+              "inline-flex": viewMode,
+              hidden: !viewMode,
+            },
+          )}
+          onClick={handleEdit}
         >
-          <Button
-            type="submit"
-            disabled={mode === "editing" || isError || !changed}
-            className={cx()}
-          >
-            <SaveIcon className="mr-1 h-4 w-4" />
-            <span>{isNew ? "Create" : "Update"}</span>
-          </Button>
-        </div>
-        <span className="absolute -top-4 -left-4">
-          <span
-            className={cx(
-              "text-xs text-white italic rounded-full mr-2 px-2 py-1 bg-gray-500",
-              {
-                hidden: isNew || !viewMode || golink.active,
-              },
-            )}
-          >
-            disabled
-          </span>
-        </span>
-        <span className="absolute -top-4 -right-4">
-          <Button
-            className={cx(
-              "rounded-full w-8 h-8",
-              "transition-all",
-              "invisible opacity-0",
-              "group-hover:visible group-hover:opacity-100",
-              {
-                "inline-flex": viewMode,
-                hidden: !viewMode,
-              },
-            )}
-            onClick={handleEdit}
-          >
-            <EditIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            className={cx("rounded-full w-8 h-8", {
-              "inline-flex": !viewMode,
-              hidden: viewMode,
-            })}
-            onClick={handleCancel}
-          >
-            <CancelIcon className="w-4 h-4" />
-          </Button>
-        </span>
-      </form>
-    </>
+          <EditIcon className="w-4 h-4" />
+        </Button>
+        <Button
+          className={cx("rounded-full w-8 h-8", {
+            "inline-flex": !viewMode,
+            hidden: viewMode,
+          })}
+          onClick={handleCancel}
+        >
+          <CancelIcon className="w-4 h-4" />
+        </Button>
+      </span>
+    </form>
   );
 }
