@@ -140,7 +140,8 @@ fn rocket() -> _ {
 
     dotenv().ok();
 
-    let db_config: Map<_, Value> = map! { "url" => env::var("GOGO_DB_URL").unwrap().into() };
+    let db_config: Map<_, Value> =
+        map! { "url" => env::var("GOGO_DB_URL").expect("GOGO_DB_URL environment variable").into() };
     let config = rocket::Config::figment().merge(("databases", map!["gogo" => db_config]));
 
     rocket::custom(config)
