@@ -1,7 +1,7 @@
 FROM rust AS builder
 WORKDIR /build
 
-RUN rustup default nightly
+RUN rustup default nightly-2022-01-14
 
 COPY Cargo.toml Cargo.lock ./
 RUN --mount=type=cache,target=/build/target/release \
