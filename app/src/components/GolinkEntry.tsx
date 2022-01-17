@@ -1,71 +1,10 @@
 import cx from "classnames";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ApiResponse } from "../api";
-import { assertNever } from "../assert";
 import { Golink, NewGolink } from "../models";
 import { Button } from "./Button";
-import { ArchiveIcon, CancelIcon, EditIcon, SaveIcon } from "./Icons";
-type EditableProps = React.DetailedHTMLProps<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  HTMLInputElement
-> & {
-  mode: "view" | "edit";
-  error?: string;
-  hint?: string;
-};
-function Editable(props: EditableProps) {
-  const { mode, className, value, error, hint, ...rest } = props;
-  const isError = error !== "";
-  switch (mode) {
-    case "view":
-      return <span className={className}>{value}</span>;
-    case "edit":
-      return (
-        <>
-          <input
-            className={cx(
-              className,
-              "appearance-none",
-              "rounded-sm",
-              "w-full",
-              "py-1 px-2",
-              "leading-tight",
-              "shadow",
-              "border",
-              "transform-gpu transition-all duration-1500",
-              "border-gray-500",
-              "focus:ring-gray-400",
-              "focus:border-gray-400",
-              "focus:ring-1",
-              "selection:bg-gray-400/20",
-            )}
-            value={value}
-            {...rest}
-          />
-          <div className="mt-1">
-            <span
-              className={cx("text-xs italic", "text-gray-700", {
-                hidden: !hint || isError,
-                block: hint,
-              })}
-            >
-              {hint}
-            </span>
-            <span
-              className={cx("text-xs italic", "text-rose-600", {
-                hidden: !isError,
-                block: isError,
-              })}
-            >
-              {error}
-            </span>
-          </div>
-        </>
-      );
-    default:
-      assertNever(mode);
-  }
-}
+import { Editable } from "./Editable";
+import { CancelIcon, EditIcon, SaveIcon } from "./Icons";
 
 export type Mode = "view" | "edit";
 
@@ -223,7 +162,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
         )}
       >
         <label htmlFor="keyword" className="text-right">
-          <span className="font-mono font-bold bg-gray-700 text-white px-1">
+          <span className="font-mono font-medium bg-gray-700 text-white p-1">
             go/
           </span>
         </label>
@@ -247,7 +186,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
         <label htmlFor="link" className="text-right">
           <span
             className={cx(
-              "font-mono font-bold text-sm bg-gray-500 text-white px-1",
+              "font-mono font-medium text-sm bg-gray-500 text-white p-1",
               {
                 "line-through": viewMode && !isNew && !golink.active,
               },
@@ -265,9 +204,8 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             mode={viewMode ? "view" : "edit"}
             placeholder="https://somewhere.url/with/a/really/long/path"
             value={golink.link}
-            hint={`Include %s anywhere in the link to expand text following ${
-              golink.keyword || "keyword"
-            }/`}
+            hint={`Include %s anywhere in the link to expand text following ${golink.keyword || "keyword"
+              }/`}
             error={linkError}
             onChange={(ev) => props.onChange("link", ev.target.value)}
             autoComplete="off"
