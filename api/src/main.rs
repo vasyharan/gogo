@@ -26,15 +26,21 @@ struct GogoDbConn(diesel::PgConnection);
 async fn redirect(conn: GogoDbConn, path: PathBuf) -> Result<Redirect, RedirectError> {
     use crate::schema::shortlinks::dsl::*;
 
-    let mut path_iter = path.iter();
-    match path_iter.next() {
+    let mut piter = path.iter();
+    match piter.next() {
         None => Err(RedirectError::NotFound),
         Some(path) => {
             let kw = String::from(path.to_str().unwrap_or(""));
             let golink = conn
                 .run(move |c| shortlinks.filter(keyword.eq(kw)).first::<Golink>(c))
                 .await?;
-            Ok(Redirect::to(golink.link))
+            let maybe_remaining: Option<String> = piter
+                .map(|osstr| Some(osstr.to_str()?.to_string()))
+                .collect();
+            match maybe_remaining {
+                Some(remaining) => Ok(Redirect::to(golink.link.replace("%s", &remaining))),
+                None => Ok(Redirect::to(golink.link)),
+            }
         }
     }
 }
