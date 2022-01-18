@@ -1,7 +1,10 @@
 import cx from "classnames";
 import { assertNever } from "../assert";
 
-type HTMLInputElementDetailedProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+type HTMLInputElementDetailedProps = React.DetailedHTMLProps<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+>;
 type EditableProps = HTMLInputElementDetailedProps & {
   mode: "view" | "edit";
   error?: string;
@@ -61,4 +64,3 @@ export function Editable(props: EditableProps) {
       assertNever(mode);
   }
 }
-

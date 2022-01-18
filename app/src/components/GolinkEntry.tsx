@@ -207,8 +207,9 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
             mode={viewMode ? "view" : "edit"}
             placeholder="https://somewhere.url/with/a/really/long/path"
             value={golink.link}
-            hint={`Include %s anywhere in the link to expand text following ${golink.keyword || "keyword"
-              }/`}
+            hint={`Include %s anywhere in the link to expand text following ${
+              golink.keyword || "keyword"
+            }/`}
             error={linkError}
             onChange={(ev) => props.onChange("link", ev.target.value)}
             autoComplete="off"

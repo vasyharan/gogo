@@ -1,0 +1,7 @@
+# from .gitignore
+/node_modules
+/.parcel-cache
+/dist
+
+# not included in .gitignore
+pnpm-lock.yaml

@@ -24,7 +24,7 @@ export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
             "flex grow items-center ",
             "border-gray-700",
             "focus-within:border-b",
-            "text-gray-500 focus-within:text-gray-700"
+            "text-gray-500 focus-within:text-gray-700",
           )}
         >
           <SearchIcon className="w-4 h-4" />
@@ -40,7 +40,7 @@ export function Navbar({ query, onNewLink, onQueryChange }: NavbarProps) {
               "placeholder-gray-300",
               "focus:ring-0",
               "focus:placeholder-gray-400",
-              "selection:bg-gray-700/20"
+              "selection:bg-gray-700/20",
             )}
             placeholder="Search..."
             value={query}

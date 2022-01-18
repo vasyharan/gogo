@@ -5,7 +5,7 @@
     "build": "parcel build --public-url /go",
     "dev": "parcel serve",
     "lint": "eslint src",
-    "format": "prettier --ignore-path .gitignore --write ."
+    "format": "prettier --write ."
   },
   "targets": {
     "default": {
