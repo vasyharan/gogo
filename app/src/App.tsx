@@ -26,14 +26,19 @@ const loadLinks = debounce(_loadLinks, 300);
 
 type Editing =
   | { state: "inactive" }
-  | { state: "new"; golink: NewGolink; errors: GolinkEntryErrors; shake: boolean }
   | {
-    state: "existing";
-    id: number;
-    golink: NewGolink;
-    errors: GolinkEntryErrors;
-    shake: boolean;
-  };
+      state: "new";
+      golink: NewGolink;
+      errors: GolinkEntryErrors;
+      shake: boolean;
+    }
+  | {
+      state: "existing";
+      id: number;
+      golink: NewGolink;
+      errors: GolinkEntryErrors;
+      shake: boolean;
+    };
 const EDITING_INACTIVE: Editing = { state: "inactive" };
 const GOLINK_NEW = { keyword: "", link: "", active: true };
 const ENTRY_NO_ERRORS: GolinkEntryErrors = { keyword: "", link: "" };
@@ -52,7 +57,8 @@ export function App() {
     const { code } = resp.error;
     let keywordError = "";
     if (code === 101) {
-      keywordError = "Only lowercase alpha, numbers, -, and _ characters are allowed.";
+      keywordError =
+        "Only lowercase alpha, numbers, -, and _ characters are allowed.";
     } else if (code === 102) {
       keywordError = "A link with the same keyword already exists!";
     }
@@ -126,14 +132,14 @@ export function App() {
     const nextEditing: Editing = !golink
       ? EDITING_INACTIVE
       : "id" in golink
-        ? {
+      ? {
           state: "existing",
           id: golink.id,
           golink: golink,
           shake: false,
           errors: { keyword: "", link: "" },
         }
-        : {
+      : {
           state: "new",
           golink: golink,
           shake: false,
@@ -199,11 +205,11 @@ export function App() {
         const [mode, errors, golink, eshake] =
           editingExisting && editing.id === orig.id
             ? [
-              "edit" as const,
-              editing.errors,
-              { ...editing.golink, id: editing.id },
-              shake,
-            ]
+                "edit" as const,
+                editing.errors,
+                { ...editing.golink, id: editing.id },
+                shake,
+              ]
             : ["view" as const, ENTRY_NO_ERRORS, orig, undefined];
         const changed = editingExisting && hasChanged(orig, editing.golink);
         return (
