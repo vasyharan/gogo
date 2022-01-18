@@ -28,12 +28,12 @@ type Editing =
   | { state: "inactive" }
   | { state: "new"; golink: NewGolink; errors: GolinkEntryErrors; shake?: true }
   | {
-      state: "existing";
-      id: number;
-      golink: NewGolink;
-      errors: GolinkEntryErrors;
-      shake?: true;
-    };
+    state: "existing";
+    id: number;
+    golink: NewGolink;
+    errors: GolinkEntryErrors;
+    shake?: true;
+  };
 const EDITING_INACTIVE: Editing = { state: "inactive" };
 const GOLINK_NEW = { keyword: "", link: "", active: true };
 const ENTRY_NO_ERRORS: GolinkEntryErrors = { keyword: "", link: "" };
@@ -56,7 +56,7 @@ export function App() {
       setGolinks([...golinks, created]);
     } else if (resp.type === "error") {
       const { code } = resp.error;
-      let keywordError: string = "";
+      let keywordError = "";
       if (code === 101) {
         keywordError = "A link with the same keyword already exists!";
       }
@@ -115,13 +115,13 @@ export function App() {
     const nextEditing: Editing = !golink
       ? EDITING_INACTIVE
       : "id" in golink
-      ? {
+        ? {
           state: "existing",
           id: golink.id,
           golink: golink,
           errors: { keyword: "", link: "" },
         }
-      : {
+        : {
           state: "new",
           golink: golink,
           errors: { keyword: "", link: "" },
@@ -163,7 +163,7 @@ export function App() {
       {editingNew && (
         <div
           className={cx({ "animate-shake": shake })}
-          onAnimationEnd={(ev) => {
+          onAnimationEnd={() => {
             if (editing.state === "new") {
               setEditing({ ...editing, shake: undefined });
             }
@@ -186,24 +186,24 @@ export function App() {
         const [mode, errors, golink, eshake] =
           editingExisting && editing.id === orig.id
             ? [
-                "edit" as const,
-                editing.errors,
-                { ...editing.golink, id: editing.id },
-                shake,
-              ]
+              "edit" as const,
+              editing.errors,
+              { ...editing.golink, id: editing.id },
+              shake,
+            ]
             : ["view" as const, ENTRY_NO_ERRORS, orig, undefined];
         const changed = editingExisting && hasChanged(orig, editing.golink);
         return (
           <div
+            key={golink.id}
             className={cx({ "animate-shake": eshake })}
-            onAnimationEnd={(ev) => {
+            onAnimationEnd={() => {
               if (editing.state === "existing") {
                 setEditing({ ...editing, shake: undefined });
               }
             }}
           >
             <EditGolink
-              key={golink.id}
               mode={mode}
               golink={golink}
               errors={errors}
