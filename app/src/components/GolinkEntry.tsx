@@ -134,7 +134,7 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
     if (keywordError === "") {
       if (golink.keyword === "") {
         keywordError = "A keyword is required.";
-      } else if (/[a-z0-9\-_]+/.test(golink.keyword) === false) {
+      } else if (/^[a-z0-9\-_]+$/.test(golink.keyword) === false) {
         keywordError =
           "Only lowercase alpha, numbers, -, and _ characters are allowed.";
       }
