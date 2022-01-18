@@ -6,9 +6,8 @@ const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
 };
 
-export type ApiResponse<T> =
-  | { type: "error"; error: { status: number; code: number; message: string } }
-  | { type: "success"; value: T };
+export type ApiError = { type: "error"; error: { status: number; code: number; message: string } };
+export type ApiResponse<T> = ApiError | { type: "success"; value: T };
 
 async function toApiResponse<T>(resp: Response): Promise<ApiResponse<T>> {
   if (resp.ok) {

@@ -1,7 +1,7 @@
 import cx from "classnames";
 import { debounce } from "lodash";
 import { useEffect, useState } from "react";
-import { createLink, listLinks, updateLink } from "./api";
+import { ApiError, createLink, listLinks, updateLink } from "./api";
 import { assertNever } from "./assert";
 import {
   CreateGolink,
@@ -26,13 +26,13 @@ const loadLinks = debounce(_loadLinks, 300);
 
 type Editing =
   | { state: "inactive" }
-  | { state: "new"; golink: NewGolink; errors: GolinkEntryErrors; shake?: true }
+  | { state: "new"; golink: NewGolink; errors: GolinkEntryErrors; shake: boolean }
   | {
     state: "existing";
     id: number;
     golink: NewGolink;
     errors: GolinkEntryErrors;
-    shake?: true;
+    shake: boolean;
   };
 const EDITING_INACTIVE: Editing = { state: "inactive" };
 const GOLINK_NEW = { keyword: "", link: "", active: true };
@@ -48,6 +48,24 @@ export function App() {
     loadLinks(query, setGolinks);
   }, [query]);
 
+  function handleError(resp: ApiError) {
+    const { code } = resp.error;
+    let keywordError = "";
+    if (code === 101) {
+      keywordError = "Only lowercase alpha, numbers, -, and _ characters are allowed.";
+    } else if (code === 102) {
+      keywordError = "A link with the same keyword already exists!";
+    }
+
+    if (editing.state !== "inactive") {
+      setEditing({
+        ...editing,
+        shake: false,
+        errors: { ...editing.errors, keyword: keywordError },
+      });
+    }
+  }
+
   async function handleCreate(golink) {
     const resp = await createLink(golink);
     if (resp.type === "success") {
@@ -55,17 +73,7 @@ export function App() {
       setEditing(EDITING_INACTIVE);
       setGolinks([...golinks, created]);
     } else if (resp.type === "error") {
-      const { code } = resp.error;
-      let keywordError = "";
-      if (code === 101) {
-        keywordError = "A link with the same keyword already exists!";
-      }
-      if (editing.state !== "inactive") {
-        setEditing({
-          ...editing,
-          errors: { ...editing.errors, keyword: keywordError },
-        });
-      }
+      handleError(resp);
     } else assertNever(resp);
 
     return resp;
@@ -80,7 +88,10 @@ export function App() {
       );
       setEditing(EDITING_INACTIVE);
       setGolinks(updatedLinks);
-    }
+    } else if (resp.type === "error") {
+      handleError(resp);
+    } else assertNever(resp);
+
     return resp;
   }
 
@@ -119,11 +130,13 @@ export function App() {
           state: "existing",
           id: golink.id,
           golink: golink,
+          shake: false,
           errors: { keyword: "", link: "" },
         }
         : {
           state: "new",
           golink: golink,
+          shake: false,
           errors: { keyword: "", link: "" },
         };
 

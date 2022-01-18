@@ -12,6 +12,7 @@ use crate::diesel::prelude::*;
 use crate::errors::*;
 use crate::models::*;
 use dotenv::dotenv;
+use regex::Regex;
 use rocket::response::status::{Created, NoContent};
 use rocket::response::Redirect;
 use rocket::serde::json::Json;
@@ -79,12 +80,40 @@ async fn get_link(conn: GogoDbConn, id: i32) -> Result<Json<Golink>, ApiError> {
     Ok(Json(golink))
 }
 
+fn validate_golink_keyword(keyword: &str) -> Result<(), ApiError> {
+    let re = Regex::new(r"^[a-z0-9\-_]+$").unwrap();
+    if !re.is_match(keyword) {
+        return Err(ApiError::AppError(ErrorCode::InvalidKeyword));
+    }
+    Ok(())
+}
+
+#[test]
+fn test_validate_golink_keyword() {
+    assert_eq!(Ok(()), validate_golink_keyword("abc"));
+    assert_eq!(Ok(()), validate_golink_keyword("09"));
+    assert_eq!(Ok(()), validate_golink_keyword("_"));
+    assert_eq!(Ok(()), validate_golink_keyword("-"));
+
+    let err = Err(ApiError::AppError(ErrorCode::InvalidKeyword));
+    assert_eq!(err, validate_golink_keyword(""));
+    assert_eq!(err, validate_golink_keyword("ABC"));
+    assert_eq!(err, validate_golink_keyword("def/"));
+}
+
+fn validate_new_golink(golink: Json<NewGolink>) -> Result<Json<NewGolink>, ApiError> {
+    let _ = validate_golink_keyword(&*golink.keyword)?;
+    return Ok(golink);
+}
+
 #[post("/link", format = "json", data = "<golink>")]
 async fn create_link(
     conn: GogoDbConn,
     golink: Json<NewGolink>,
 ) -> Result<Created<Json<Golink>>, ApiError> {
     use crate::schema::shortlinks;
+
+    let golink = validate_new_golink(golink)?;
     let created_golink = conn
         .run(move |c| {
             diesel::insert_into(shortlinks::table)
@@ -99,6 +128,11 @@ async fn create_link(
     Ok(Created::new("/link").body(Json(created_golink)))
 }
 
+fn validate_golink(golink: Json<Golink>) -> Result<Json<Golink>, ApiError> {
+    let _ = validate_golink_keyword(&*golink.keyword)?;
+    return Ok(golink);
+}
+
 #[put("/link/<id>", format = "json", data = "<golink>")]
 async fn update_link(
     conn: GogoDbConn,
@@ -107,6 +141,7 @@ async fn update_link(
 ) -> Result<Json<Golink>, ApiError> {
     use crate::schema::shortlinks;
 
+    let golink = validate_golink(golink)?;
     let updated_golink: Golink = conn
         .run(move |c| {
             diesel::update(shortlinks::table.find(id))

@@ -15,7 +15,7 @@ pub struct Golink {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Deserialize, Insertable, Debug)]
+#[derive(Deserialize, Insertable, PartialEq, Debug)]
 #[table_name = "shortlinks"]
 pub struct NewGolink {
     pub keyword: String,

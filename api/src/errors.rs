@@ -5,11 +5,31 @@ use rocket::serde::{Serialize, Serializer};
 use rocket::Response;
 use serde::ser::SerializeStruct;
 
-#[derive(Copy, Clone, Debug)]
-enum ErrorCode {
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum ErrorCode {
     Unknown = 0,
     NotFound = 100,
+    InvalidKeyword,
     KeywordConflict,
+}
+
+impl ErrorCode {
+    const fn status(&self) -> Status {
+        match self {
+            ErrorCode::Unknown => Status::InternalServerError,
+            _ => Status::BadRequest,
+        }
+    }
+    const fn message(&self) -> &str {
+        match self {
+            ErrorCode::Unknown => "",
+            ErrorCode::NotFound => "link not found",
+            ErrorCode::InvalidKeyword => {
+                "keyword must be non empty and consist only of a-z, 0-9, -, and _"
+            }
+            ErrorCode::KeywordConflict => "keyword must be unique",
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -53,9 +73,9 @@ impl From<diesel::result::Error> for RedirectError {
 }
 
 const NOT_FOUND_RESPONSE: ErrorResponse = ErrorResponse {
-    status: Status::NotFound,
     code: ErrorCode::NotFound,
-    message: "Link not found",
+    status: ErrorCode::NotFound.status(),
+    message: ErrorCode::NotFound.message(),
 };
 
 impl<'r> Responder<'r, 'static> for RedirectError {
@@ -87,8 +107,10 @@ impl<'r> Responder<'r, 'static> for RedirectError {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ApiError {
     DatabaseError(diesel::result::Error),
+    AppError(ErrorCode),
 }
 
 impl From<diesel::result::Error> for ApiError {
@@ -110,16 +132,28 @@ impl<'r> Responder<'r, 'static> for ApiError {
             Self::DatabaseError(DieselError::DatabaseError(
                 DatabaseErrorKind::UniqueViolation,
                 _,
-            )) => ErrorResponse {
-                status: Status::BadRequest,
-                code: ErrorCode::KeywordConflict,
-                message: "keyword must be unique",
-            },
+            )) => {
+                let code = ErrorCode::KeywordConflict;
+                message = code.message().to_string();
+                ErrorResponse {
+                    code,
+                    status: code.status(),
+                    message: message.as_str(),
+                }
+            }
             Self::DatabaseError(err) => {
                 message = format!("Database error: {}", err);
                 ErrorResponse {
                     status: Status::InternalServerError,
                     code: ErrorCode::Unknown,
+                    message: message.as_str(),
+                }
+            }
+            Self::AppError(code) => {
+                message = code.message().to_string();
+                ErrorResponse {
+                    code,
+                    status: code.status(),
                     message: message.as_str(),
                 }
             }
