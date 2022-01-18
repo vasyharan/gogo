@@ -133,13 +133,16 @@ function GolinkEntry<T extends NewGolink | Golink>(props: GolinkEntryProps<T>) {
   if (mode === "edit") {
     if (keywordError === "") {
       if (golink.keyword === "") {
-        keywordError = "A keyword is required";
+        keywordError = "A keyword is required.";
+      } else if (/[a-z0-9\-\_]+/.test(golink.keyword) === false) {
+        keywordError =
+          "Only lowercase alpha, numbers, -, and _ characters are allowed.";
       }
     }
 
     if (linkError === "") {
       if (!isValidURL(golink.link)) {
-        linkError = "A link is must be valid HTTP/HTTPS URL";
+        linkError = "A link is must be valid HTTP/HTTPS URL.";
       }
     }
   }
