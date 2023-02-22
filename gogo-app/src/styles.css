@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  @keyframes shake {
+    0% {
+      transform: translateX(0);
+    }
+    6.5% {
+      transform: translateX(-6px) rotateY(-9deg);
+    }
+    18.5% {
+      transform: translateX(5px) rotateY(7deg);
+    }
+    31.5% {
+      transform: translateX(-3px) rotateY(-5deg);
+    }
+    43.5% {
+      transform: translateX(2px) rotateY(3deg);
+    }
+    50% {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-shake {
+    animation: shake 1s ease-in-out;
+  }
+
+  .button {
+    @apply inline-flex items-center justify-center 
+        py-1 px-2 
+        rounded
+        leading-none text-white
+        transform-gpu transition-all duration-150
+        outline-none ring-0
+        disabled:shadow-none
+        disabled:translate-y-0
+        hover:shadow-lg
+        focus:ring
+        hover:-translate-y-0.5;
+  }
+
+  .button.default {
+    @apply bg-gray-500
+        ring-gray-500
+        hover:bg-gray-700
+        focus:bg-gray-700
+        focus-visible:bg-gray-700
+        disabled:bg-gray-100
+        disabled:text-gray-300;
+  }
+
+  .button.primary {
+    @apply bg-emerald-300
+        ring-emerald-300
+        hover:bg-emerald-500
+        focus:bg-emerald-500
+        focus-visible:bg-emerald-500
+        disabled:bg-gray-100
+        disabled:text-gray-300;
+  }
+
+  .button.warn {
+    @apply bg-orange-300
+        ring-orange-300
+        hover:bg-orange-500
+        focus:bg-orange-500
+        focus-visible:bg-orange-500
+        disabled:bg-gray-100
+        disabled:text-gray-300;
+  }
+
+  .loader-dots div {
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+  }
+  .loader-dots div:nth-child(1) {
+    left: 8px;
+    animation: loader-dots1 0.6s infinite;
+  }
+  .loader-dots div:nth-child(2) {
+    left: 8px;
+    animation: loader-dots2 0.6s infinite;
+  }
+  .loader-dots div:nth-child(3) {
+    left: 24px;
+    animation: loader-dots2 0.6s infinite;
+  }
+  .loader-dots div:nth-child(4) {
+    left: 40px;
+    animation: loader-dots3 0.6s infinite;
+  }
+  @keyframes loader-dots1 {
+    0% {
+      transform: scale(0);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes loader-dots3 {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0);
+    }
+  }
+  @keyframes loader-dots2 {
+    0% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(16px, 0);
+    }
+  }
+}
