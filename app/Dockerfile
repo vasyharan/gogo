@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS builder
+FROM node:16-alpine AS builder
 WORKDIR /build
 
 RUN npm install --global pnpm \
@@ -12,6 +12,6 @@ COPY . .
 RUN --mount=type=cache,target=/var/cache/pnpm-store \
     pnpm run build
 
-FROM nginx:stable-alpine
+FROM nginx:1.21-alpine
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /build/dist /usr/share/nginx/html
